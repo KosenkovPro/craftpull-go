@@ -175,7 +175,7 @@ craftpull --version
 `.github/workflows/build.yml` собирает проект при каждом пуше:
 
 * **Windows x64** — mingw-w64, cgo включён, упаковка в `zip`.
-* **macOS Intel** (`macos-13`) и **macOS Apple Silicon** (`macos-14`) — отдельные сборки.
+* **macOS Intel** (`macos-15-intel`) и **macOS Apple Silicon** (`macos-15`) — отдельные сборки.
 * **macOS universal** — `lipo` обеих архитектур, плюс пакет `CraftPull.app`, `zip` и `.dmg`.
 * **macOS universal legacy** — тот же universal-бинарник, собранный на Go 1.24 для macOS 11.
 * **Проверки** — `go vet`, сборка без cgo и кросс-компиляция.

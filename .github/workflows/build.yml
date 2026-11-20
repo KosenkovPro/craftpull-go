@@ -56,6 +56,8 @@ jobs:
             dist/craftpull-windows-amd64.zip
 
   # --- macOS: отдельно Intel и Apple Silicon ---
+  # Метки раннеров: macos-15-intel — Intel, macos-15 — Apple Silicon.
+  # Старые macos-13 и macos-14 GitHub больше не предоставляет.
   macos:
     name: macOS ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
@@ -63,9 +65,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-13
+          - runner: macos-15-intel
             arch: amd64
-          - runner: macos-14
+          - runner: macos-15
             arch: arm64
     steps:
       - uses: actions/checkout@v4
@@ -91,9 +93,19 @@ jobs:
           path: dist/craftpull-darwin-${{ matrix.arch }}
 
   # --- macOS 11 (Big Sur): legacy-сборка на Go 1.24 ---
+  # cgo не умеет кросс-компилировать macOS, поэтому каждая архитектура
+  # собирается на своём раннере.
   macos-legacy:
-    name: macOS universal (legacy, Go 1.24)
-    runs-on: macos-13
+    name: macOS ${{ matrix.arch }} (legacy, Go 1.24)
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: amd64
+          - runner: macos-15
+            arch: arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -102,14 +114,36 @@ jobs:
           go-version: "1.24.13"
           cache: true
 
-      - name: Сборка Intel и Apple Silicon
+      - name: Сборка ${{ matrix.arch }}
         env:
           CGO_ENABLED: "1"
           GOOS: darwin
+          GOARCH: ${{ matrix.arch }}
         run: |
           mkdir -p dist
-          GOARCH=amd64 go build -ldflags "-s -w" -o dist/craftpull-darwin-amd64-legacy ./cmd/craftpull
-          GOARCH=arm64 go build -ldflags "-s -w" -o dist/craftpull-darwin-arm64-legacy ./cmd/craftpull
+          go build -ldflags "-s -w" -o dist/craftpull-darwin-${{ matrix.arch }}-legacy ./cmd/craftpull
+          file dist/craftpull-darwin-${{ matrix.arch }}-legacy
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: craftpull-darwin-${{ matrix.arch }}-legacy
+          path: dist/craftpull-darwin-${{ matrix.arch }}-legacy
+
+  # --- macOS 11: universal из legacy-сборок ---
+  macos-universal-legacy:
+    name: macOS universal (legacy, Go 1.24)
+    needs: [macos-legacy]
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            craftpull-darwin-amd64-legacy
+            craftpull-darwin-arm64-legacy
+          merge-multiple: true
+          path: dist
 
       - name: Universal-бинарник
         run: |
@@ -122,11 +156,11 @@ jobs:
           name: craftpull-darwin-universal-legacy
           path: dist/craftpull-darwin-universal-legacy
 
-  # --- macOS universal:Intel + Apple Silicon одним файлом ---
+  # --- macOS universal: Intel + Apple Silicon одним файлом ---
   macos-universal:
     name: macOS universal
     needs: [macos]
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
 
@@ -207,7 +241,7 @@ jobs:
   # --- Релиз ---
   release:
     name: Релиз
-    needs: [windows, macos-universal, macos-legacy]
+    needs: [windows, macos-universal, macos-universal-legacy]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:

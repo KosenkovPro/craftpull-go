@@ -177,7 +177,7 @@ speed limit, parallel downloads, pinned versions, interface language and view mo
 `.github/workflows/build.yml` builds the project on every push:
 
 * **Windows x64** — mingw-w64, cgo enabled, packed into a `zip`.
-* **macOS Intel** (`macos-13`) and **macOS Apple Silicon** (`macos-14`) — separate builds.
+* **macOS Intel** (`macos-15-intel`) and **macOS Apple Silicon** (`macos-15`) — separate builds.
 * **macOS universal** — `lipo` of both architectures, plus a `CraftPull.app` bundle, a `zip` and
   a `.dmg`.
 * **macOS universal legacy** — the same universal build made with Go 1.24 for macOS 11.

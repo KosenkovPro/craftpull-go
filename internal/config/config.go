@@ -39,6 +39,34 @@ var DefaultRepos = []string{
 	"storytold/craft-anything",
 	"storytold/craft-libs",
 	"storytold/craft-launcher",
+	"flameshot-org/flameshot",
+}
+
+// DefaultPurposes — короткое назначение программы.
+//
+// Это пользовательские данные, а не переводы интерфейса: они хранятся
+// в конфиге, правятся вручную и переживают экспорт и импорт списка.
+var DefaultPurposes = map[string]string{
+	"storytold/pdfcraft":       "PDF-документы",
+	"storytold/wordcraft":      "Текстовый редактор",
+	"storytold/gridcraft":      "Таблицы",
+	"storytold/deckcraft":      "Презентации",
+	"storytold/photocraft":     "Работа с фото",
+	"storytold/vectorcraft":    "Векторная графика",
+	"storytold/figcraft":       "Прототипы",
+	"storytold/designcraft":    "Дизайн и вёрстка",
+	"storytold/cadcraft":       "Чертежи и CAD",
+	"storytold/texturecraft":   "Текстуры",
+	"storytold/materialcraft":  "Материалы",
+	"storytold/filmcraft":      "Монтаж видео",
+	"storytold/lightcraft":     "Освещение",
+	"storytold/effectcraft":    "Эффекты",
+	"storytold/soundcraft":     "Звук и музыка",
+	"storytold/artcraft":       "Живопись",
+	"storytold/craft-anything": "Всё сразу",
+	"storytold/craft-libs":     "Библиотеки",
+	"storytold/craft-launcher": "Запуск программ",
+	"flameshot-org/flameshot":  "Скриншоты",
 }
 
 // AssetKind — какой файл релиза скачивать.
@@ -224,14 +252,23 @@ type RepoConfig struct {
 	Pinned  []string  `json:"pinned"`
 	Filter  AssetKind `json:"filter"`
 	// CloneSource — дополнительно клонировать/обновлять исходники через git.
-	CloneSource bool    `json:"clone_source"`
-	Description string  `json:"description"`
-	Icon        *string `json:"icon"`
+	CloneSource bool   `json:"clone_source"`
+	Description string `json:"description"`
+	// Purpose — короткое назначение программы: «работа с PDF-документами»,
+	// «монтаж видео». Показывается в плитке сетки.
+	Purpose string  `json:"purpose"`
+	Icon    *string `json:"icon"`
 }
 
 // NewRepoConfig создаёт настройки репозитория с выключенной загрузкой.
 func NewRepoConfig(slug string) RepoConfig {
-	return RepoConfig{Slug: slug, Enabled: false, Pinned: []string{}, Filter: AssetAuto}
+	return RepoConfig{
+		Slug:    slug,
+		Enabled: false,
+		Pinned:  []string{},
+		Filter:  AssetAuto,
+		Purpose: DefaultPurposes[slug],
+	}
 }
 
 // ShortName — имя репозитория без владельца.
@@ -416,6 +453,13 @@ func (c *Config) ensureRepos() {
 			c.Repos = append(c.Repos, NewRepoConfig(slug))
 		}
 	}
+	// Назначение программы подставляется, только если его ещё нет:
+	// своё значение пользователь мог поменять вручную.
+	for i := range c.Repos {
+		if c.Repos[i].Purpose == "" {
+			c.Repos[i].Purpose = DefaultPurposes[c.Repos[i].Slug]
+		}
+	}
 	if c.MaxParallel <= 0 {
 		c.MaxParallel = 1
 	}
@@ -449,6 +493,8 @@ type RepoEntry struct {
 	Slug        string    `json:"slug"`
 	Enabled     bool      `json:"enabled"`
 	Description string    `json:"description"`
+	// Purpose — короткое назначение программы.
+	Purpose     string    `json:"purpose"`
 	Pinned      []string  `json:"pinned"`
 	Filter      AssetKind `json:"filter"`
 	CloneSource bool      `json:"clone_source"`
@@ -480,6 +526,7 @@ func (c Config) ExportList() RepoListFile {
 			Slug:        r.Slug,
 			Enabled:     r.Enabled,
 			Description: r.Description,
+			Purpose:     r.Purpose,
 			Pinned:      append([]string{}, r.Pinned...),
 			Filter:      r.Filter,
 			CloneSource: r.CloneSource,
@@ -501,6 +548,9 @@ func (c *Config) ImportList(file *RepoListFile) int {
 			if entry.Description != "" {
 				existing.Description = entry.Description
 			}
+			if entry.Purpose != "" {
+				existing.Purpose = entry.Purpose
+			}
 			for _, p := range entry.Pinned {
 				if !existing.IsPinned(p) {
 					existing.Pinned = append(existing.Pinned, p)
@@ -517,6 +567,7 @@ func (c *Config) ImportList(file *RepoListFile) int {
 			Filter:      entry.Filter,
 			CloneSource: entry.CloneSource,
 			Description: entry.Description,
+			Purpose:     entry.Purpose,
 			Icon:        nil,
 		})
 		added++

@@ -42,6 +42,9 @@ The configuration file is **format-compatible with the Rust edition**: the same
   and only after they succeed are the older versions removed.
 * **Automatic file selection** — the file filter picks the build for the **current operating
   system** on its own, and every asset of a release can also be ticked by hand.
+* **A short purpose for every program** — the tile says in one line what the program is for
+  (`PDF-документы`, `Монтаж видео`, `Скриншоты`). The text lives in the configuration file and
+  travels with the repository list when it is exported and imported.
 * **Self-cleaning storage** — old versions are deleted automatically once the new ones are on
   disk; a pinned release is never deleted, even manually.
 * **Safe downloads** — resumable (HTTP `Range`), `.part` files, SHA-256 verification, a global
@@ -52,6 +55,8 @@ The configuration file is **format-compatible with the Rust edition**: the same
   from the tray menu (show, pause, stop, quit).
 * **Two languages** — English and Russian, switchable at any time.
 * **Self-update** — the newest release is downloaded straight from GitHub and applied on exit.
+* **Free license** — CraftPull is released under the dual `MIT / Apache-2.0` license; hovering the
+  line in the sidebar explains what it allows.
 
 ## Screens
 

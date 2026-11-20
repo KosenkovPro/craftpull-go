@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/KosenkovPro/craftpull-go/internal/buildinfo"
 	"github.com/KosenkovPro/craftpull-go/internal/config"
 )
 
@@ -41,8 +42,8 @@ func createShortcut(target string) (string, error) {
   <key>CFBundleExecutable</key><string>craftpull</string>
   <key>CFBundleIconFile</key><string>craftpull.icns</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.1.0</string>
-  <key>CFBundleVersion</key><string>0.1.0</string>
+  <key>CFBundleShortVersionString</key><string>` + buildinfo.Version + `</string>
+  <key>CFBundleVersion</key><string>` + buildinfo.Version + `</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict>

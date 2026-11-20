@@ -10,7 +10,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/KosenkovPro/craftpull-go/internal/i18n"
@@ -174,11 +173,3 @@ func detailParts(task model.TaskProgress) []string {
 	}
 	return parts
 }
-
-// themeColor возвращает цвет темы по имени.
-func themeColor(name fyne.ThemeColorName) color.Color { return theme.Color(name) }
-
-// tickOld и circleOld остались в Rust-версии как подсказка по геометрии.
-func tickOld(size float32) {}
-
-func circleOld(size float32) {}

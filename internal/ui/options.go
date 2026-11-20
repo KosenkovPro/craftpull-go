@@ -10,6 +10,9 @@ import (
 // Version — версия программы.
 const Version = buildinfo.Version
 
+// License — лицензия программы: показывается в боковой панели.
+const License = buildinfo.License
+
 // Options — параметры запуска интерфейса.
 type Options struct {
 	View         config.ViewMode

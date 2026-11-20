@@ -43,6 +43,7 @@ type UI struct {
 	statusBox *canvas.Rectangle
 	notice   *widget.Label
 	search   *widget.Entry
+	license  *tipLabel
 	navBtns  map[app.Tab]*widget.Button
 	selected map[string]bool
 
@@ -78,6 +79,10 @@ func (u *UI) Build(win fyne.Window) fyne.CanvasObject {
 	u.notice = widget.NewLabel("")
 	u.notice.Importance = widget.LowImportance
 	u.notice.SizeName = theme.SizeNameCaptionText
+
+	// Лицензия с пояснением по наведению.
+	u.license = newTipLabel(License, i18n.T("license.hint"))
+	u.license.label.Importance = widget.HighImportance
 
 	u.search = widget.NewEntry()
 	u.search.SetPlaceHolder(i18n.T("repo.slug_hint"))
@@ -169,6 +174,9 @@ func (u *UI) buildSidebar() fyne.CanvasObject {
 	footer := container.NewVBox(
 		labelDim(i18n.T("nav.footer")),
 		labelDim(fmt.Sprintf("%s %s", i18n.T("nav.version"), Version)),
+		// Лицензия программы: при наведении появляется объяснение,
+		// что она разрешает.
+		u.license,
 		labelDim(i18n.T("app.author")),
 		u.notice,
 	)

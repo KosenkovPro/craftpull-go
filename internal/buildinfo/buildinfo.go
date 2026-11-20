@@ -2,10 +2,13 @@
 package buildinfo
 
 // Version — версия программы.
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 // Name — название программы.
 const Name = "CraftPull"
 
 // Subtitle — подпись под названием.
 const Subtitle = "менеджер релизов"
+
+// License — лицензия программы: показывается в интерфейсе.
+const License = "MIT / Apache-2.0"

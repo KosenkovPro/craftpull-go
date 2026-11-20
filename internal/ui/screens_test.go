@@ -36,22 +36,24 @@ const shotsEnv = "CRAFTPULL_SHOTS_DIR"
 // shotRepos — репозитории для снимков: те же, что и в рабочей копии,
 // с описаниями из карточек GitHub.
 func shotRepos() []config.RepoConfig {
-	list := []struct{ slug, desc string }{
-		{"storytold/pdfcraft", "PdfCraft: An open-source PDF reader and editor written from scratch in pure Rust"},
-		{"storytold/wordcraft", "WordCraft: an open-source, clean-room word processor in pure Rust"},
-		{"storytold/gridcraft", "GridCraft: an open-source, clean-room spreadsheet in pure Rust. By ArtCraft."},
-		{"storytold/deckcraft", "DeckCraft: presentations and slide shows; an open-source, clean-room presentation app in pure Rust."},
-		{"storytold/photocraft", "PhotoCraft: An open-source photo editor written from scratch in pure Rust"},
-		{"storytold/vectorcraft", "VectorCraft: An open-source vector art tool written from scratch in pure Rust"},
-		{"storytold/figcraft", "FigCraft: interface design and prototyping; an open-source, clean-room reimplementation of collaborative design workflows in pure Rust"},
-		{"storytold/designcraft", "DesignCraft: An open-source page and layout design editor written from scratch in pure Rust"},
-		{"storytold/cadcraft", "CADCraft: computer-aided design and drafting — an open-source, clean-room CAD application in pure Rust"},
+	list := []struct{ slug, desc, purpose string }{
+		{"storytold/pdfcraft", "PdfCraft: An open-source PDF reader and editor written from scratch in pure Rust", "PDF-документы"},
+		{"storytold/wordcraft", "WordCraft: an open-source, clean-room word processor in pure Rust", "Текстовый редактор"},
+		{"storytold/gridcraft", "GridCraft: an open-source, clean-room spreadsheet in pure Rust. By ArtCraft.", "Таблицы"},
+		{"storytold/deckcraft", "DeckCraft: presentations and slide shows; an open-source, clean-room presentation app in pure Rust.", "Презентации"},
+		{"storytold/photocraft", "PhotoCraft: An open-source photo editor written from scratch in pure Rust", "Работа с фото"},
+		{"storytold/vectorcraft", "VectorCraft: An open-source vector art tool written from scratch in pure Rust", "Векторная графика"},
+		{"storytold/figcraft", "FigCraft: interface design and prototyping; an open-source, clean-room reimplementation of collaborative design workflows in pure Rust", "Прототипы"},
+		{"storytold/designcraft", "DesignCraft: An open-source page and layout design editor written from scratch in pure Rust", "Дизайн и вёрстка"},
+		{"storytold/cadcraft", "CADCraft: computer-aided design and drafting — an open-source, clean-room CAD application in pure Rust", "Чертежи и CAD"},
+		{"flameshot-org/flameshot", "Powerful yet simple to use screenshot software", "Скриншоты"},
 	}
 	out := make([]config.RepoConfig, 0, len(list))
 	for _, r := range list {
 		rc := config.NewRepoConfig(r.slug)
 		rc.Enabled = true
 		rc.Description = r.desc
+		rc.Purpose = r.purpose
 		out = append(out, rc)
 	}
 	return out

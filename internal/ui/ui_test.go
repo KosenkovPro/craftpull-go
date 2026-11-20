@@ -10,6 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/test"
+
+	"github.com/KosenkovPro/craftpull-go/internal/app"
 	"github.com/KosenkovPro/craftpull-go/internal/config"
 	"github.com/KosenkovPro/craftpull-go/internal/i18n"
 	"github.com/KosenkovPro/craftpull-go/internal/manager"
@@ -59,5 +64,48 @@ func TestVersionLine(t *testing.T) {
 	empty := versionLine(manager.RepoRuntime{})
 	if empty == "" {
 		t.Fatal("строка версии без релизов пуста")
+	}
+}
+
+// TestLicenseTip проверяет, что лицензия показана в боковой панели и при
+// наведении появляется пояснение.
+func TestLicenseTip(t *testing.T) {
+	i18n.Set(i18n.RU)
+	defer i18n.Set(i18n.EN)
+
+	dir := t.TempDir()
+	t.Setenv("CRAFTPULL_CONFIG_DIR", dir)
+	t.Setenv("CRAFTPULL_DATA_DIR", dir)
+
+	test.NewApp()
+
+	cfg := config.Config{RootDir: t.TempDir(), MaxParallel: 2, Lang: 1}
+	mgr, err := manager.New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mgr.Close()
+
+	u := NewUI(mgr, app.New(config.ViewGrid, 1))
+	win := test.NewWindow(nil)
+	win.Resize(fyne.NewSize(1200, 800))
+	win.SetContent(u.Build(win))
+	win.Show()
+
+	if u.license == nil {
+		t.Fatal("строка с лицензией не создана")
+	}
+	if u.license.label.Text != License {
+		t.Fatalf("в панели показана лицензия %q, ожидалась %q", u.license.label.Text, License)
+	}
+
+	// Наведение: пояснение появляется, уход мыши — исчезает.
+	u.license.MouseIn(&desktop.MouseEvent{})
+	if !u.license.shown() {
+		t.Fatal("подсказка с лицензией не появилась")
+	}
+	u.license.MouseOut()
+	if u.license.shown() {
+		t.Fatal("подсказка с лицензией не исчезла")
 	}
 }

@@ -119,6 +119,8 @@ func table() map[string]entry {
 		{"nav.logs", "Log", "Журнал"},
 		{"nav.footer", "running in background · tray active", "работает в фоне · трей активен"},
 		{"nav.version", "version", "версия"},
+		// --- Лицензия ---
+		{"license.hint", "CraftPull is distributed under the dual MIT / Apache-2.0 license: you may use, modify and redistribute it, including in commercial products, as long as the copyright notice is kept. Apache-2.0 additionally grants an explicit patent license. The full texts are in the LICENSE file.", "CraftPull распространяется под двойной лицензией MIT / Apache-2.0: программу можно свободно использовать, изменять и распространять, в том числе в коммерческих продуктах, при сохранении уведомления об авторских правах. Apache-2.0 дополнительно даёт явные права на патенты. Полные тексты лицензий — в файле LICENSE."},
 		// --- Статусы ---
 		{"status.ready", "Ready", "Готов"},
 		{"status.downloading", "Downloading", "Загрузка"},

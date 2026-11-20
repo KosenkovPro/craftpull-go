@@ -234,12 +234,20 @@ func (u *UI) gridTile(rc config.RepoConfig) fyne.CanvasObject {
 	name.Alignment = fyne.TextAlignCenter
 	name.Truncation = fyne.TextTruncateEllipsis
 
+	// Под названием — короткое назначение программы: «работа с PDF»,
+	// «монтаж видео». Значение хранится в конфиге и в списке JSON.
+	purpose := labelDim(rc.Purpose)
+	purpose.Alignment = fyne.TextAlignCenter
+	purpose.Truncation = fyne.TextTruncateEllipsis
+	purpose.SizeName = theme.SizeNameCaptionText
+
 	ver := textColored(version, tint, 12, false)
 	ver.(*canvas.Text).Alignment = fyne.TextAlignCenter
 
 	content := container.NewVBox(
 		container.NewCenter(iconBox),
 		container.New(widthLayout{width: 150}, name),
+		container.New(widthLayout{width: 165}, purpose),
 		container.NewCenter(ver),
 	)
 

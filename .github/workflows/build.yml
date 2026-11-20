@@ -194,7 +194,18 @@ jobs:
       - name: Архив и образ диска
         run: |
           zip -qry dist/craftpull-macos-universal.zip dist/CraftPull.app
-          hdiutil create -volname CraftPull -srcfolder dist/CraftPull.app -ov -format UDZO dist/craftpull-macos-universal.dmg
+          # hdiutil на раннерах иногда отвечает «Resource busy» — повторяем.
+          for attempt in 1 2 3 4; do
+            if hdiutil create -volname CraftPull -srcfolder dist/CraftPull.app \
+                -ov -format UDZO dist/craftpull-macos-universal.dmg; then
+              echo "Образ диска готов"
+              break
+            fi
+            echo "hdiutil не справился, попытка $attempt"
+            rm -f dist/craftpull-macos-universal.dmg
+            sleep 15
+          done
+          test -f dist/craftpull-macos-universal.dmg
 
       - uses: actions/upload-artifact@v4
         with:

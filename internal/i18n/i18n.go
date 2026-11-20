@@ -185,6 +185,8 @@ func table() map[string]entry {
 		{"repo.import_ok", "Imported repositories: {n}", "Импортировано репозиториев: {n}"},
 		{"repo.import_err", "Import failed: {e}", "Ошибка импорта: {e}"},
 		{"repo.export_ok", "Repository list saved: {p}", "Список репозиториев сохранён: {p}"},
+		{"repo.export_err", "Export failed: {e}", "Ошибка экспорта: {e}"},
+		{"repo.view_mode", "View mode", "Режим отображения"},
 		{"repo.desc_hint", "short description", "краткое описание"},
 		{"repo.desc_missing", "no description yet", "описания пока нет"},
 		{"repo.filter", "Files", "Файлы"},

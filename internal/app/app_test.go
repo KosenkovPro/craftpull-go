@@ -1,6 +1,7 @@
 package app
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/KosenkovPro/craftpull-go/internal/config"
@@ -18,9 +19,16 @@ func TestPreselect(t *testing.T) {
 		},
 	}
 
+	// Отмечается файл под текущую ОС: на Windows — архив, на Linux и
+	// macOS — AppImage.
+	expected := "app-1.0.0-linux-x86_64.AppImage"
+	if runtime.GOOS == "windows" {
+		expected = "app-1.0.0-windows-x64.zip"
+	}
+
 	st.Preselect("owner/app", rel)
-	if !st.IsSelected(rel.Tag, "app-1.0.0-windows-x64.zip") {
-		t.Fatal("файл под текущую ОС не отмечен")
+	if !st.IsSelected(rel.Tag, expected) {
+		t.Fatalf("файл под текущую ОС (%s) не отмечен", expected)
 	}
 
 	count, _, _ := st.SelectionSummary([]model.ReleaseInfo{*rel})
@@ -31,7 +39,7 @@ func TestPreselect(t *testing.T) {
 	// Повторный вызов не должен отмечать файл заново после снятия отметки.
 	st.ClearSelection()
 	st.Preselect("owner/app", rel)
-	if st.IsSelected(rel.Tag, "app-1.0.0-windows-x64.zip") {
+	if st.IsSelected(rel.Tag, expected) {
 		t.Fatal("отметка вернулась после снятия")
 	}
 }

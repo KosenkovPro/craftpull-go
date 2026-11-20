@@ -139,10 +139,12 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: |
-            craftpull-darwin-amd64-legacy
-            craftpull-darwin-arm64-legacy
-          merge-multiple: true
+          name: craftpull-darwin-amd64-legacy
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: craftpull-darwin-arm64-legacy
           path: dist
 
       - name: Universal-бинарник
@@ -170,10 +172,12 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: |
-            craftpull-darwin-amd64
-            craftpull-darwin-arm64
-          merge-multiple: true
+          name: craftpull-darwin-amd64
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: craftpull-darwin-arm64
           path: dist
 
       - name: Universal-бинарник
@@ -261,6 +265,7 @@ jobs:
       - name: Опубликовать релиз
         uses: softprops/action-gh-release@v2
         with:
+          fail_on_unmatched_files: false
           files: |
             dist/craftpull-windows-amd64.zip
             dist/craftpull-darwin-amd64

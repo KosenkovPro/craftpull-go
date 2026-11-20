@@ -55,12 +55,20 @@ The configuration file is **format-compatible with the Rust edition**: the same
 
 ## Screens
 
-The pictures show the Russian interface; the program also speaks English — the language is
-switched in the settings or with the `RU` / `EN` button in the header.
+The interface repeats the design of the **Windows (Rust) edition** — the same palette, the same
+header, the same tiles, cards and panels. The pictures show the Russian interface; the program
+also speaks English — the language is switched in the settings or with the `RU` / `EN` button in
+the header.
 
 ![Repository grid](docs/screenshots/01-repositories-grid.png)
 
-*Grid: every repository is a card with its version, description, file filter and buttons.*
+*Grid: every repository is a tile with its icon and version. The chevron at the icon opens the
+list of releases, and the tick in the corner marks the repositories selected for downloading.*
+
+![Unfolded card](docs/screenshots/07-repositories-hero.png)
+
+*An unfolded card takes the place of its tile: the icon, the version, the channel, the description
+and the buttons of the repository.*
 
 ![Release panel](docs/screenshots/04-releases.png)
 

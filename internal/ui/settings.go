@@ -1,6 +1,9 @@
 //go:build cgo
 
 // Вкладка настроек.
+//
+// Разделы собраны карточками — так же, как в Windows-версии: заголовок
+// раздела, тонкая линия и сами настройки под ней.
 package ui
 
 import (
@@ -9,6 +12,7 @@ import (
 	"net/http"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
@@ -26,9 +30,9 @@ func (u *UI) buildSettings() fyne.CanvasObject {
 	folder.SetText(cfg.RootDir)
 	folderEntry := folder
 
-	speed := widget.NewSelect([]string{
+	speeds := []string{
 		i18n.T("settings.no_limit"), "1 MB/s", "2 MB/s", "4 MB/s", "8 MB/s", "16 MB/s",
-	}, nil)
+	}
 	speedIndex := 0
 	switch {
 	case cfg.SpeedLimitKbps == 0:
@@ -44,13 +48,12 @@ func (u *UI) buildSettings() fyne.CanvasObject {
 	default:
 		speedIndex = 5
 	}
-	speed.SetSelected([]string{
-		i18n.T("settings.no_limit"), "1 MB/s", "2 MB/s", "4 MB/s", "8 MB/s", "16 MB/s",
-	}[speedIndex])
+	speed := widget.NewSelect(speeds, nil)
+	speed.SetSelected(speeds[speedIndex])
 
 	parallel := widget.NewSlider(1, float64(config.MaxParallel))
 	parallel.SetValue(float64(cfg.MaxParallel))
-	parallelValue := widget.NewLabel(fmt.Sprintf("%d %s", cfg.MaxParallel,
+	parallelValue := labelDim(fmt.Sprintf("%d %s", cfg.MaxParallel,
 		i18n.TF("settings.parallel_max", map[string]string{"{n}": fmt.Sprintf("%d", config.MaxParallel)})))
 	parallel.OnChanged = func(v float64) {
 		parallelValue.SetText(fmt.Sprintf("%d %s", int(v),
@@ -92,12 +95,25 @@ func (u *UI) buildSettings() fyne.CanvasObject {
 		lang.SetSelected(i18n.LangName(i18n.EN))
 	}
 
-	view := widget.NewSelect([]string{
-		config.ViewGrid.Label(), config.ViewList.Label(), config.ViewLight.Label(),
-	}, nil)
-	view.SetSelected(cfg.ViewMode.Label())
+	// Режим отображения — кнопками, как в Windows-версии.
+	viewButtons := container.NewHBox()
+	viewModes := []config.ViewMode{config.ViewGrid, config.ViewList, config.ViewLight}
+	for _, mode := range viewModes {
+		mode := mode
+		btn := widget.NewButton(mode.Label(), func() {
+			cfg := u.mgr.Config()
+			cfg.ViewMode = mode
+			_ = u.mgr.SaveConfig(cfg)
+			u.st.SetView(mode)
+			u.Rebuild()
+		})
+		if mode == cfg.ViewMode {
+			btn.Importance = widget.HighImportance
+		}
+		viewButtons.Add(btn)
+	}
 
-	save := widget.NewButtonWithIcon(i18n.T("common.save"), nil, func() {
+	save := widget.NewButton(i18n.T("common.save"), func() {
 		newCfg := u.mgr.Config()
 		newCfg.RootDir = folderEntry.Text
 		switch speed.Selected {
@@ -132,14 +148,6 @@ func (u *UI) buildSettings() fyne.CanvasObject {
 		} else {
 			newCfg.Lang = i18n.EN
 		}
-		switch view.Selected {
-		case config.ViewList.Label():
-			newCfg.ViewMode = config.ViewList
-		case config.ViewLight.Label():
-			newCfg.ViewMode = config.ViewLight
-		default:
-			newCfg.ViewMode = config.ViewGrid
-		}
 		if err := u.mgr.SaveConfig(newCfg); err != nil {
 			u.st.SetNotice(err.Error())
 			return
@@ -169,50 +177,56 @@ func (u *UI) buildSettings() fyne.CanvasObject {
 		u.runSelfUpdate()
 	})
 
-	network := container.NewVBox(
-		labelText(i18n.T("settings.network"), true),
-		rowOf(i18n.T("settings.limit"), speed),
-		rowOf(i18n.T("settings.parallel"), container.NewHBox(parallel, parallelValue)),
-		rowOf(i18n.T("download.mode"), mode),
-		rowOf("", verify),
-		rowOf(i18n.T("settings.token"), token),
-	)
-
-	channels := container.NewVBox(
-		labelText(i18n.T("settings.channels"), true),
-		stable, edge,
-	)
-
-	behaviour := container.NewVBox(
-		labelText(i18n.T("settings.behaviour"), true),
-		deleteOld, closeTray, startMin,
-	)
-
-	appearance := container.NewVBox(
-		labelText(i18n.T("settings.language"), true),
-		lang,
-		rowOf(i18n.T("settings.view_mode"), view),
-	)
-
-	install := container.NewVBox(
-		labelText(i18n.T("settings.install"), true),
-		container.NewHBox(shortcutBtn, openData, openLog),
-		update,
-	)
-
 	body := container.NewVBox(
-		rowOf(i18n.T("settings.folder"), folder),
-		network, channels, behaviour, appearance, install,
+		sectionCard(i18n.T("settings.language"),
+			container.NewVBox(
+				rowOf(i18n.T("settings.language"), container.New(widthLayout{width: 250}, lang)),
+				rowOf(i18n.T("repo.view_mode"), viewButtons),
+			)),
+		sectionCard(i18n.T("settings.folder"),
+			rowOf(i18n.T("settings.folder"), folder)),
+		sectionCard(i18n.T("settings.network"),
+			container.NewVBox(
+				rowOf(i18n.T("settings.limit"), container.New(widthLayout{width: 250}, speed)),
+				rowOf(i18n.T("settings.parallel"), container.NewHBox(parallel, parallelValue)),
+				rowOf(i18n.T("download.mode"), container.New(widthLayout{width: 250}, mode)),
+				rowOf("", verify),
+				rowOf(i18n.T("settings.token"), token),
+			)),
+		sectionCard(i18n.T("settings.channels"),
+			container.NewVBox(stable, edge)),
+		sectionCard(i18n.T("settings.behaviour"),
+			container.NewVBox(deleteOld, closeTray, startMin)),
+		sectionCard(i18n.T("settings.install"),
+			container.NewVBox(
+				container.NewHBox(shortcutBtn, openData, openLog),
+				update,
+			)),
 	)
+
+	// Заголовок страницы и липкая кнопка сохранения.
+	head := heading(i18n.T("settings.title"))
 	// Кнопка сохранения липнет к низу: её видно всегда, даже если настроек
 	// больше, чем помещается в окно.
-	return container.NewBorder(nil, container.NewHBox(save), nil, nil, container.NewScroll(body))
+	return container.NewBorder(container.NewVBox(head), container.NewHBox(save), nil, nil,
+		container.NewScroll(body))
+}
+
+// sectionCard собирает карточку раздела настроек: заголовок, линия, содержимое.
+func sectionCard(title string, content fyne.CanvasObject) fyne.CanvasObject {
+	divider := canvas.NewRectangle(colBorder)
+	divider.SetMinSize(fyne.NewSize(0, 1))
+	rows := container.NewVBox(labelText(title, true), divider, content)
+	rect := canvas.NewRectangle(colCard)
+	rect.StrokeColor = colBorder
+	rect.StrokeWidth = 1
+	rect.CornerRadius = 12
+	return container.NewStack(rect, container.NewPadded(rows))
 }
 
 // rowOf собирает строку «подпись — значение».
 func rowOf(label string, value fyne.CanvasObject) fyne.CanvasObject {
-	text := widget.NewLabel(label)
-	text.TextStyle = fyne.TextStyle{}
+	text := labelDim(label)
 	return container.NewBorder(nil, nil, text, nil, value)
 }
 

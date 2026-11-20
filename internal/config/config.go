@@ -454,6 +454,24 @@ type RepoEntry struct {
 	CloneSource bool      `json:"clone_source"`
 }
 
+// ParseList читает список репозиториев из JSON-файла.
+func ParseList(data []byte) (*RepoListFile, error) {
+	var file RepoListFile
+	if err := json.Unmarshal(data, &file); err != nil {
+		return nil, err
+	}
+	return &file, nil
+}
+
+// WriteList записывает список репозиториев в JSON-файл.
+func WriteList(path string, list RepoListFile) error {
+	data, err := json.MarshalIndent(list, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
+}
+
 // ExportList собирает список репозиториев для экспорта.
 func (c Config) ExportList() RepoListFile {
 	entries := make([]RepoEntry, 0, len(c.Repos))

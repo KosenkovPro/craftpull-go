@@ -14,12 +14,19 @@ import (
 
 // PNG возвращает иконкуprogramмы в формате PNG.
 func PNG(size int) []byte {
+	var buf bytes.Buffer
+	_ = png.Encode(&buf, Image(size))
+	return buf.Bytes()
+}
+
+// Image возвращает иконку программы как картинку.
+//
+// Картинка готова сразу — без ленивой загрузки из ресурса: так Fyne рисует
+// её сразу, без пустых мест на экране.
+func Image(size int) image.Image {
 	img := image.NewNRGBA(image.Rect(0, 0, size, size))
 	drawIcon(img, size)
-
-	var buf bytes.Buffer
-	_ = png.Encode(&buf, img)
-	return buf.Bytes()
+	return img
 }
 
 // drawIcon рисует иконку: скруглённый квадрат и стрелку вниз.

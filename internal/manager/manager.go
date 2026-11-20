@@ -714,6 +714,18 @@ func (m *Manager) CleanupRepo(slug string, keep []string) {
 	}
 }
 
+// RemoveVersion удаляет скачанную версию репозитория.
+//
+// Закреплённые версии удалить нельзя: они хранятся в настройках репозитория.
+func (m *Manager) RemoveVersion(slug, tag string) bool {
+	cfg := m.Config()
+	rc := cfg.Repo(slug)
+	if rc == nil {
+		return false
+	}
+	return storage.RemoveVersion(cfg.RootDir, slug, tag, rc.Pinned)
+}
+
 // DownloadAll скачивает новые релизы всех включённых репозиториев.
 func (m *Manager) DownloadAll(ctx context.Context) {
 	cfg := m.Config()

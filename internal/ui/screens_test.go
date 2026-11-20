@@ -140,6 +140,12 @@ func TestScreens(t *testing.T) {
 	st.SetTab(app.TabLogs)
 	u.Rebuild()
 	shoot("06-logs.png")
+
+	// Раскрытая карточка репозитория — как в Windows-версии.
+	st.SetTab(app.TabRepos)
+	st.SetHero("storytold/pdfcraft")
+	u.Rebuild()
+	shoot("07-repositories-hero.png")
 }
 
 // captureScreen сохраняет снимок окна, если задана папка для снимков.

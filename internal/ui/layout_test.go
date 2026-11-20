@@ -52,8 +52,13 @@ func TestLayout(t *testing.T) {
 		t.Fatalf("высота рабочей области %v — список репозиториев не виден", got)
 	}
 
-	card := u.repoCard(cfg.Repos[0], false)
-	if card.MinSize().Height < 80 {
-		t.Fatalf("высота карточки %v — карточка схлопнулась", card.MinSize())
+	list := u.listCard(cfg.Repos[0])
+	if list.MinSize().Height < 80 {
+		t.Fatalf("высота карточки %v — карточка схлопнулась", list.MinSize())
+	}
+
+	tile := u.gridTile(cfg.Repos[0])
+	if tile.MinSize().Height < 80 {
+		t.Fatalf("высота плитки %v — плитка схлопнулась", tile.MinSize())
 	}
 }

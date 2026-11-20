@@ -1,6 +1,10 @@
 //go:build cgo
 
 // Оболочка интерфейса: окно, шапка, боковая панель, вкладки.
+//
+// Каркас повторяет Windows-версию: тёмная шапка со значком программы и
+// статусом, боковая панель навигации со служебной подписью внизу и рабочая
+// область, в которой живёт содержимое раздела.
 package ui
 
 import (
@@ -9,7 +13,6 @@ import (
 	"image/color"
 	"sort"
 	"strings"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -19,6 +22,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/KosenkovPro/craftpull-go/internal/app"
+	"github.com/KosenkovPro/craftpull-go/internal/buildinfo"
 	"github.com/KosenkovPro/craftpull-go/internal/config"
 	"github.com/KosenkovPro/craftpull-go/internal/i18n"
 	"github.com/KosenkovPro/craftpull-go/internal/manager"
@@ -35,7 +39,8 @@ type UI struct {
 	body     *container.Split
 	host     *fyne.Container
 	content  fyne.CanvasObject
-	status   *widget.Label
+	status   *canvas.Text
+	statusBox *canvas.Rectangle
 	notice   *widget.Label
 	search   *widget.Entry
 	navBtns  map[app.Tab]*widget.Button
@@ -60,11 +65,19 @@ func NewUI(mgr *manager.Manager, st *app.State) *UI {
 
 // Build собирает окно и возвращает корневой объект.
 func (u *UI) Build(win fyne.Window) fyne.CanvasObject {
+	applyTheme()
 	u.win = win
-	u.status = widget.NewLabel(i18n.T("status.ready"))
-	u.status.TextStyle = fyne.TextStyle{Bold: true}
+
+	u.status = canvas.NewText(i18n.T("status.ready"), colDim)
+	u.status.TextSize = 12
+	u.statusBox = canvas.NewRectangle(colCard)
+	u.statusBox.StrokeColor = colBorder
+	u.statusBox.StrokeWidth = 1
+	u.statusBox.CornerRadius = 8
+
 	u.notice = widget.NewLabel("")
-	u.notice.TextStyle = fyne.TextStyle{Italic: true}
+	u.notice.Importance = widget.LowImportance
+	u.notice.SizeName = theme.SizeNameCaptionText
 
 	u.search = widget.NewEntry()
 	u.search.SetPlaceHolder(i18n.T("repo.slug_hint"))
@@ -77,38 +90,38 @@ func (u *UI) Build(win fyne.Window) fyne.CanvasObject {
 	// раздева при создании и подмену содержимого уже не рисует.
 	u.host = container.New(layout.NewMaxLayout())
 	u.body = container.NewHSplit(sidebar, u.host)
-	u.body.Offset = 0.18
-
-	footer := container.NewHBox(
-		widget.NewLabel(fmt.Sprintf("%s %s", i18n.T("nav.version"), Version)),
-		widget.NewLabel(i18n.T("nav.footer")),
-	)
-	footer.Objects[0].(*widget.Label).TextStyle = fyne.TextStyle{}
-	footer.Objects[1].(*widget.Label).TextStyle = fyne.TextStyle{}
+	u.body.Offset = 0.16
 
 	// Border, а не VBox: вертикальная коробка отдаёт лишнее место последнему
 	// элементу, и рабочая область оставалась бы в пару пикселей высотой.
-	u.root = container.NewBorder(header, footer, nil, nil, u.body)
+	u.root = container.NewBorder(header, nil, nil, nil, u.body)
 	u.Rebuild()
 	return u.root
 }
 
-// buildHeader собирает верхнюю панель.
+// buildHeader собирает верхнюю панель: значок, название, статус и действия.
 func (u *UI) buildHeader() fyne.CanvasObject {
-	title := widget.NewLabelWithStyle("CraftPull", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
-	subtitle := widget.NewLabel(i18n.T("app.subtitle"))
+	logo := programIcon(26)
 
-	check := widget.NewButtonWithIcon(i18n.T("common.refresh"), theme.SearchIcon(), func() {
+	title := widget.NewLabelWithStyle(buildinfo.Name, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+	title.SizeName = theme.SizeNameSubHeadingText
+
+	subtitle := labelDim(i18n.T("app.subtitle"))
+	subtitle.SizeName = theme.SizeNameCaptionText
+
+	status := container.NewStack(u.statusBox, container.NewPadded(center(u.status)))
+
+	check := widget.NewButton(i18n.T("common.refresh"), func() {
 		go u.mgr.RefreshAll(context.Background(), true)
 	})
-	download := widget.NewButtonWithIcon(i18n.T("common.download_new"), theme.DownloadIcon(), func() {
+	download := widget.NewButton(i18n.T("common.download_new"), func() {
 		go u.mgr.DownloadAll(context.Background())
 	})
-	pause := widget.NewButtonWithIcon(i18n.T("common.pause"), theme.MediaPauseIcon(), func() {
+	pause := widget.NewButton(i18n.T("common.pause"), func() {
 		u.mgr.TogglePause()
 		u.Rebuild()
 	})
-	stop := widget.NewButtonWithIcon(i18n.T("common.stop"), theme.MediaStopIcon(), func() {
+	stop := widget.NewButton(i18n.T("common.stop"), func() {
 		u.mgr.StopAll()
 	})
 
@@ -128,12 +141,15 @@ func (u *UI) buildHeader() fyne.CanvasObject {
 		}
 	})
 
-	left := container.NewHBox(title, subtitle, u.status)
+	left := container.NewHBox(logo, title, subtitle, status)
 	right := container.NewHBox(check, download, pause, stop, lang)
 	return container.NewBorder(nil, nil, left, right)
 }
 
 // buildSidebar собирает боковую панель навигации.
+//
+// Внизу — служебная подпись: версия, автор и режим работы в фоне,
+// как в Windows-версии.
 func (u *UI) buildSidebar() fyne.CanvasObject {
 	makeButton := func(tab app.Tab, label string) *widget.Button {
 		btn := widget.NewButton(label, func() {
@@ -149,7 +165,14 @@ func (u *UI) buildSidebar() fyne.CanvasObject {
 		makeButton(app.TabLogs, i18n.T("nav.logs")),
 	)
 	box.Objects[0].(*widget.Button).Importance = widget.HighImportance
-	return container.NewScroll(box)
+
+	footer := container.NewVBox(
+		labelDim(i18n.T("nav.footer")),
+		labelDim(fmt.Sprintf("%s %s", i18n.T("nav.version"), Version)),
+		labelDim(i18n.T("app.author")),
+		u.notice,
+	)
+	return container.NewBorder(container.NewVBox(container.NewPadded(box)), container.NewPadded(footer), nil, nil, nil)
 }
 
 // Rebuild перестраивает содержимое окна.
@@ -166,6 +189,10 @@ func (u *UI) Rebuild() {
 		btn.Refresh()
 	}
 	u.status.Text = u.statusText()
+	u.status.Color = u.statusColor()
+	u.statusBox.StrokeColor = u.statusColor()
+	canvas.Refresh(u.statusBox)
+	u.notice.SetText(u.st.Notice())
 
 	switch u.st.Tab() {
 	case app.TabSettings:
@@ -185,10 +212,24 @@ func (u *UI) Rebuild() {
 		u.body.SetOffset(0.62)
 	} else {
 		u.host.Objects = []fyne.CanvasObject{main}
-		u.body.SetOffset(0.18)
+		u.body.SetOffset(0.16)
 	}
 	u.host.Refresh()
 	canvas.Refresh(u.root)
+}
+
+// statusColor возвращает цвет чипа статуса: зелёный — идёт загрузка,
+// красный — есть ошибки, серый — программа ждёт.
+func (u *UI) statusColor() color.Color {
+	if u.mgr.HasErrors() {
+		return colError
+	}
+	for _, t := range u.mgr.Tasks().All() {
+		if !t.State.IsFinished() {
+			return colOK
+		}
+	}
+	return colDim
 }
 
 // statusText собирает текст чипа статуса.
@@ -266,20 +307,3 @@ func (u *UI) taskForRepo(slug string) (model.TaskProgress, bool) {
 	}
 	return model.TaskProgress{}, false
 }
-
-// chip рисует маленькую метку-таблетку.
-func chip(text string, c color.Color) *canvas.Text {
-	t := canvas.NewText(text, c)
-	t.TextSize = 11
-	return t
-}
-
-// labelText создаёт текстовую подпись с заданным стилем.
-func labelText(text string, bold bool) *widget.Label {
-	l := widget.NewLabel(text)
-	l.TextStyle = fyne.TextStyle{Bold: bold}
-	return l
-}
-
-// nowStamp возвращает текущее время в формате «15:04:05».
-func nowStamp() string { return time.Now().Format("15:04:05") }

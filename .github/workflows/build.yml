@@ -26,6 +26,7 @@ jobs:
         continue-on-error: true
         run: |
           choco install mingw -y --no-progress
+          echo "C:\ProgramData\mingw64\bin" >> $env:GITHUB_PATH
           echo "C:\mingw64\bin" >> $env:GITHUB_PATH
 
       - name: Проверка cgo
@@ -135,7 +136,9 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: craftpull-darwin-*
+          pattern: |
+            craftpull-darwin-amd64
+            craftpull-darwin-arm64
           merge-multiple: true
           path: dist
 
@@ -213,6 +216,8 @@ jobs:
         with:
           files: |
             dist/craftpull-windows-amd64.zip
+            dist/craftpull-darwin-amd64
+            dist/craftpull-darwin-arm64
             dist/craftpull-darwin-universal
             dist/craftpull-macos-universal.zip
             dist/craftpull-macos-universal.dmg

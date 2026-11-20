@@ -1,0 +1,17 @@
+# Текст в репозитории и в рабочей копии — всегда LF, в том числе на Windows.
+* text=auto eol=lf
+
+# Двоичные файлы не трогаем.
+*.png binary
+*.ico binary
+*.icns binary
+*.exe binary
+*.dll binary
+*.dylib binary
+*.so binary
+*.zip binary
+*.gz binary
+*.deb binary
+*.rpm binary
+*.dmg binary
+*.pdf binary

@@ -1,0 +1,285 @@
+//go:build cgo
+
+// Оболочка интерфейса: окно, шапка, боковая панель, вкладки.
+package ui
+
+import (
+	"context"
+	"fmt"
+	"image/color"
+	"sort"
+	"strings"
+	"time"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
+
+	"github.com/KosenkovPro/craftpull-go/internal/app"
+	"github.com/KosenkovPro/craftpull-go/internal/config"
+	"github.com/KosenkovPro/craftpull-go/internal/i18n"
+	"github.com/KosenkovPro/craftpull-go/internal/manager"
+	"github.com/KosenkovPro/craftpull-go/internal/model"
+)
+
+// UI — состояние окна приложения.
+type UI struct {
+	mgr *manager.Manager
+	st  *app.State
+
+	win      fyne.Window
+	root     *fyne.Container
+	body     *container.Split
+	host     *fyne.Container
+	content  fyne.CanvasObject
+	status   *widget.Label
+	notice   *widget.Label
+	search   *widget.Entry
+	navBtns  map[app.Tab]*widget.Button
+	selected map[string]bool
+
+	// trayRefresh пересобирает меню трея (подписи зависят от языка).
+	trayRefresh func()
+}
+
+// SetTrayRefresh задаёт функцию пересборки меню трея.
+func (u *UI) SetTrayRefresh(f func()) { u.trayRefresh = f }
+
+// NewUI создаёт интерфейс поверх менеджера.
+func NewUI(mgr *manager.Manager, st *app.State) *UI {
+	return &UI{
+		mgr:      mgr,
+		st:       st,
+		navBtns:  make(map[app.Tab]*widget.Button),
+		selected: make(map[string]bool),
+	}
+}
+
+// Build собирает окно и возвращает корневой объект.
+func (u *UI) Build(win fyne.Window) fyne.CanvasObject {
+	u.win = win
+	u.status = widget.NewLabel(i18n.T("status.ready"))
+	u.status.TextStyle = fyne.TextStyle{Bold: true}
+	u.notice = widget.NewLabel("")
+	u.notice.TextStyle = fyne.TextStyle{Italic: true}
+
+	u.search = widget.NewEntry()
+	u.search.SetPlaceHolder(i18n.T("repo.slug_hint"))
+	u.search.OnChanged = func(text string) { u.Rebuild() }
+
+	header := u.buildHeader()
+	sidebar := u.buildSidebar()
+	// host — постоянный контейнер рабочей области. Содержимое раздела
+	// меняется целиком, а сам раздел остаётся: Fyne запоминает объекты
+	// раздева при создании и подмену содержимого уже не рисует.
+	u.host = container.New(layout.NewMaxLayout())
+	u.body = container.NewHSplit(sidebar, u.host)
+	u.body.Offset = 0.18
+
+	footer := container.NewHBox(
+		widget.NewLabel(fmt.Sprintf("%s %s", i18n.T("nav.version"), Version)),
+		widget.NewLabel(i18n.T("nav.footer")),
+	)
+	footer.Objects[0].(*widget.Label).TextStyle = fyne.TextStyle{}
+	footer.Objects[1].(*widget.Label).TextStyle = fyne.TextStyle{}
+
+	// Border, а не VBox: вертикальная коробка отдаёт лишнее место последнему
+	// элементу, и рабочая область оставалась бы в пару пикселей высотой.
+	u.root = container.NewBorder(header, footer, nil, nil, u.body)
+	u.Rebuild()
+	return u.root
+}
+
+// buildHeader собирает верхнюю панель.
+func (u *UI) buildHeader() fyne.CanvasObject {
+	title := widget.NewLabelWithStyle("CraftPull", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+	subtitle := widget.NewLabel(i18n.T("app.subtitle"))
+
+	check := widget.NewButtonWithIcon(i18n.T("common.refresh"), theme.SearchIcon(), func() {
+		go u.mgr.RefreshAll(context.Background(), true)
+	})
+	download := widget.NewButtonWithIcon(i18n.T("common.download_new"), theme.DownloadIcon(), func() {
+		go u.mgr.DownloadAll(context.Background())
+	})
+	pause := widget.NewButtonWithIcon(i18n.T("common.pause"), theme.MediaPauseIcon(), func() {
+		u.mgr.TogglePause()
+		u.Rebuild()
+	})
+	stop := widget.NewButtonWithIcon(i18n.T("common.stop"), theme.MediaStopIcon(), func() {
+		u.mgr.StopAll()
+	})
+
+	langLabel := "EN"
+	if u.st.Lang() == i18n.RU {
+		langLabel = "RU"
+	}
+	lang := widget.NewButton(langLabel, func() {
+		if u.st.Lang() == i18n.RU {
+			u.st.SetLang(i18n.EN)
+		} else {
+			u.st.SetLang(i18n.RU)
+		}
+		u.Rebuild()
+		if u.trayRefresh != nil {
+			u.trayRefresh()
+		}
+	})
+
+	left := container.NewHBox(title, subtitle, u.status)
+	right := container.NewHBox(check, download, pause, stop, lang)
+	return container.NewBorder(nil, nil, left, right)
+}
+
+// buildSidebar собирает боковую панель навигации.
+func (u *UI) buildSidebar() fyne.CanvasObject {
+	makeButton := func(tab app.Tab, label string) *widget.Button {
+		btn := widget.NewButton(label, func() {
+			u.st.SetTab(tab)
+			u.Rebuild()
+		})
+		u.navBtns[tab] = btn
+		return btn
+	}
+	box := container.NewVBox(
+		makeButton(app.TabRepos, i18n.T("nav.repos")),
+		makeButton(app.TabSettings, i18n.T("nav.settings")),
+		makeButton(app.TabLogs, i18n.T("nav.logs")),
+	)
+	box.Objects[0].(*widget.Button).Importance = widget.HighImportance
+	return container.NewScroll(box)
+}
+
+// Rebuild перестраивает содержимое окна.
+func (u *UI) Rebuild() {
+	if u.root == nil {
+		return
+	}
+	for tab, btn := range u.navBtns {
+		if tab == u.st.Tab() {
+			btn.Importance = widget.HighImportance
+		} else {
+			btn.Importance = widget.MediumImportance
+		}
+		btn.Refresh()
+	}
+	u.status.Text = u.statusText()
+
+	switch u.st.Tab() {
+	case app.TabSettings:
+		u.content = u.buildSettings()
+	case app.TabLogs:
+		u.content = u.buildLogs()
+	default:
+		u.content = u.buildRepos()
+	}
+
+	// Панель релизов живёт справа от содержимого и не прокручивается вместе с ним.
+	main := container.New(layout.NewMaxLayout())
+	main.Add(u.content)
+	if open, slug := u.st.ReleasesOpen(); open {
+		panel := u.buildReleases(slug)
+		u.host.Objects = []fyne.CanvasObject{container.NewHSplit(main, panel)}
+		u.body.SetOffset(0.62)
+	} else {
+		u.host.Objects = []fyne.CanvasObject{main}
+		u.body.SetOffset(0.18)
+	}
+	u.host.Refresh()
+	canvas.Refresh(u.root)
+}
+
+// statusText собирает текст чипа статуса.
+func (u *UI) statusText() string {
+	tasks := u.mgr.Tasks().All()
+	active := 0
+	var speed float64
+	var downloaded, total uint64
+	for _, t := range tasks {
+		if t.State.IsFinished() {
+			continue
+		}
+		active++
+		speed += t.Speed
+		downloaded += t.Downloaded
+		total += t.Total
+	}
+	checks := u.mgr.Checks()
+	if checks.Running {
+		return i18n.TF("status.checking", map[string]string{
+			"{n}": fmt.Sprintf("%d", checks.Done()),
+			"{m}": fmt.Sprintf("%d", checks.Total()),
+		})
+	}
+	if active == 0 {
+		return i18n.T("status.ready")
+	}
+	return fmt.Sprintf("%s · %s · %s / %s",
+		i18n.T("status.downloading"),
+		model.HumanSpeed(speed),
+		model.HumanSize(downloaded),
+		model.HumanSize(total))
+}
+
+// Tick обновляет интерфейс по таймеру: прогресс, очередь, журнал.
+func (u *UI) Tick() {
+	u.Rebuild()
+}
+
+// filteredRepos возвращает репозитории, отобранные по строке поиска.
+func (u *UI) filteredRepos() []config.RepoConfig {
+	cfg := u.mgr.Config()
+	query := strings.ToLower(strings.TrimSpace(u.search.Text))
+	out := make([]config.RepoConfig, 0, len(cfg.Repos))
+	for _, r := range cfg.Repos {
+		if query == "" ||
+			strings.Contains(strings.ToLower(r.Slug), query) ||
+			strings.Contains(strings.ToLower(r.Description), query) {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// groupedRepos раскладывает репозитории по авторам.
+func (u *UI) groupedRepos() ([]string, map[string][]config.RepoConfig) {
+	byAuthor := make(map[string][]config.RepoConfig)
+	for _, r := range u.filteredRepos() {
+		byAuthor[r.Author()] = append(byAuthor[r.Author()], r)
+	}
+	authors := make([]string, 0, len(byAuthor))
+	for a := range byAuthor {
+		authors = append(authors, a)
+	}
+	sort.Strings(authors)
+	return authors, byAuthor
+}
+
+// taskForRepo ищет активную задачу загрузки репозитория.
+func (u *UI) taskForRepo(slug string) (model.TaskProgress, bool) {
+	for _, t := range u.mgr.Tasks().All() {
+		if t.Repo == slug && !t.State.IsFinished() {
+			return t, true
+		}
+	}
+	return model.TaskProgress{}, false
+}
+
+// chip рисует маленькую метку-таблетку.
+func chip(text string, c color.Color) *canvas.Text {
+	t := canvas.NewText(text, c)
+	t.TextSize = 11
+	return t
+}
+
+// labelText создаёт текстовую подпись с заданным стилем.
+func labelText(text string, bold bool) *widget.Label {
+	l := widget.NewLabel(text)
+	l.TextStyle = fyne.TextStyle{Bold: bold}
+	return l
+}
+
+// nowStamp возвращает текущее время в формате «15:04:05».
+func nowStamp() string { return time.Now().Format("15:04:05") }

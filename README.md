@@ -196,10 +196,11 @@ in which group of the list it is shown; both travel with the list when it is exp
 imported.
 
 The program's own update lives in a separate settings section: it shows the installed version,
-a "Check for updates" button and an "Update to v0.4.2" button that replaces the program file
+a "Check for updates" button and an "Update to v0.4.3" button that replaces the program file
 and starts the program again. The release source is the official repository by default; it can
 be changed with the `self_update_repo` field of the settings file. The update also runs from
-the command line: `craftpull --update`.
+the command line: `craftpull --update`. If the GitHub API rate limit gets in the way, the
+program reads the public release page instead — it carries the file checksum as well.
 
 ## Continuous integration
 

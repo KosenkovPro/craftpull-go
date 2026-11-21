@@ -118,6 +118,27 @@ func listReleasesWeb(ctx context.Context, client *http.Client, slug string) ([]m
 	return releases, nil
 }
 
+// LatestReleaseWeb возвращает последний стабильный релиз с публичной страницы.
+//
+// Нужна там, где REST API отказывает: анонимным клиентам GitHub даёт всего
+// 60 запросов в час на IP-адрес. На странице релиза есть и имя файла, и его
+// размер, и контрольная сумма — проверка целостности остаётся возможной.
+func LatestReleaseWeb(ctx context.Context, client *http.Client, slug string) (model.ReleaseInfo, error) {
+	releases, err := listReleasesWeb(ctx, client, slug)
+	if err != nil {
+		return model.ReleaseInfo{}, err
+	}
+	for _, rel := range releases {
+		if !rel.Prerelease {
+			return rel, nil
+		}
+	}
+	if len(releases) > 0 {
+		return releases[0], nil
+	}
+	return model.ReleaseInfo{}, fmt.Errorf("%s", i18n.T("err.web_no_releases"))
+}
+
 // fetchText скачивает страницу и возвращает текст.
 func fetchText(ctx context.Context, client *http.Client, rawURL string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)

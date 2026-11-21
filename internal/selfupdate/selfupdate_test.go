@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/KosenkovPro/craftpull-go/internal/model"
 )
 
 func TestCompareVersions(t *testing.T) {
@@ -307,5 +309,32 @@ func TestUpdateDir(t *testing.T) {
 	want := filepath.Join("data", "update", "v0.4.0")
 	if got != want {
 		t.Errorf("UpdateDir = %q, want %q", got, want)
+	}
+}
+
+// Файлы с публичной страницы переносятся в апдейтер вместе с суммами.
+func TestConvertAssetsKeepsDigest(t *testing.T) {
+	digest := "sha256:abc"
+	assets := []model.AssetInfo{
+		{
+			Name:   "craftpull-windows-amd64.zip",
+			URL:    "https://github.com/o/r/releases/download/v0.4.0/craftpull-windows-amd64.zip",
+			Size:   123,
+			Digest: &digest,
+		},
+		{Name: "v0.4.0-source.zip", URL: "https://example.invalid/source.zip"},
+	}
+	out := convertAssets(assets)
+	if len(out) != 2 {
+		t.Fatalf("ассетов: %d, ожидалось 2", len(out))
+	}
+	if out[0].Digest != digest {
+		t.Errorf("сумма = %q, ожидалась %q", out[0].Digest, digest)
+	}
+	if out[0].Size != 123 {
+		t.Errorf("размер = %d, ожидалось 123", out[0].Size)
+	}
+	if out[1].Digest != "" {
+		t.Errorf("у файла без суммы сумма = %q", out[1].Digest)
 	}
 }

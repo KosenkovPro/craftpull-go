@@ -23,6 +23,9 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/KosenkovPro/craftpull-go/internal/gh"
+	"github.com/KosenkovPro/craftpull-go/internal/model"
 )
 
 // UserAgent — как программа представляется GitHub.
@@ -60,7 +63,25 @@ type Update struct {
 }
 
 // LatestRelease спрашивает о последнем релизе репозитория.
+//
+// Сначала — REST API GitHub. Если он отказывает (чаще всего исчерпан лимит
+// запросов для анонимных клиентов), программа читает публичную страницу
+// релиза: там тоже есть имя файла, размер и контрольная сумма.
 func LatestRelease(ctx context.Context, client *http.Client, token, slug string) (Release, error) {
+	rel, err := latestReleaseAPI(ctx, client, token, slug)
+	if err == nil {
+		return rel, nil
+	}
+	web, webErr := gh.LatestReleaseWeb(ctx, client, slug)
+	if webErr != nil {
+		// Обе дороги не сработали — показываем ошибку API: она понятнее.
+		return Release{}, err
+	}
+	return Release{TagName: web.Tag, Assets: convertAssets(web.Assets)}, nil
+}
+
+// latestReleaseAPI спрашивает о последнем релизе через REST API GitHub.
+func latestReleaseAPI(ctx context.Context, client *http.Client, token, slug string) (Release, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", slug)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -84,6 +105,19 @@ func LatestRelease(ctx context.Context, client *http.Client, token, slug string)
 		return Release{}, err
 	}
 	return rel, nil
+}
+
+// convertAssets переводит файлы релиза из общей модели в модель апдейтера.
+func convertAssets(assets []model.AssetInfo) []Asset {
+	out := make([]Asset, 0, len(assets))
+	for _, a := range assets {
+		item := Asset{Name: a.Name, URL: a.URL, Size: a.Size}
+		if a.Digest != nil {
+			item.Digest = *a.Digest
+		}
+		out = append(out, item)
+	}
+	return out
 }
 
 // Check ищет обновление: возвращает найденное или nil, если установлена

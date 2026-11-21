@@ -194,7 +194,7 @@ func (u *UI) buildSettings() fyne.CanvasObject {
 		checkBtn.Disable()
 	}
 	updateSection := container.NewVBox(
-		rowOf(i18n.T("settings.update_current"), labelDim(fmt.Sprintf("%s", Version))),
+		rowOf(i18n.T("settings.update_current"), labelDim(Version)),
 		rowOf(i18n.T("settings.update_repo"), labelDim(updateRepo(cfg))),
 		rowOf("", container.NewHBox(checkBtn, updateBtn)),
 		labelDim(i18n.T("settings.update_hint")),

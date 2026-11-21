@@ -215,6 +215,47 @@ jobs:
             dist/craftpull-macos-universal.zip
             dist/craftpull-macos-universal.dmg
 
+  # --- Linux: cgo обязателен (Fyne), нужны заголовки OpenGL и X11 ---
+  # Сбой этой сборки не должен задерживать релиз: файл просто не попадёт
+  # в список, и обновление на Linux скажет, что файла для этой системы нет.
+  linux:
+    name: Linux x64
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+
+      - name: Зависимости для Fyne
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1-mesa-dev libglu1-mesa-dev xorg-dev \
+            libxxf86vm-dev libxrandr-dev libxcursor-dev libxinerama-dev libxi-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev wayland-protocols
+
+      - name: Сборка
+        env:
+          CGO_ENABLED: "1"
+        run: |
+          mkdir -p dist
+          go build -ldflags "-s -w" -o dist/craftpull ./cmd/craftpull
+          file dist/craftpull
+
+      - name: Упаковать tar.gz
+        run: |
+          tar -czf dist/craftpull-linux-amd64.tar.gz -C dist craftpull
+          sha256sum dist/craftpull-linux-amd64.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: craftpull-linux-amd64
+          path: dist/craftpull-linux-amd64.tar.gz
+
   # --- Проверки: vet, тесты, консольная сборка и кросс-компиляция ---
   check:
     name: Проверки (vet, тесты, nocgo, кросс-компиляция)
@@ -258,7 +299,7 @@ jobs:
   # --- Релиз ---
   release:
     name: Релиз
-    needs: [windows, macos-universal, macos-universal-legacy]
+    needs: [windows, macos-universal, macos-universal-legacy, linux]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
@@ -285,4 +326,5 @@ jobs:
             dist/craftpull-macos-universal.zip
             dist/craftpull-macos-universal.dmg
             dist/craftpull-darwin-universal-legacy
+            dist/craftpull-linux-amd64.tar.gz
           generate_release_notes: true

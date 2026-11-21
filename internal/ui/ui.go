@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"image/color"
 	"strings"
+	"sync"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -26,6 +27,7 @@ import (
 	"github.com/KosenkovPro/craftpull-go/internal/i18n"
 	"github.com/KosenkovPro/craftpull-go/internal/manager"
 	"github.com/KosenkovPro/craftpull-go/internal/model"
+	"github.com/KosenkovPro/craftpull-go/internal/selfupdate"
 )
 
 // UI — состояние окна приложения.
@@ -46,8 +48,44 @@ type UI struct {
 	navBtns   map[app.Tab]*widget.Button
 	selected  map[string]bool
 
+	// selfMu защищает состояние обновления программы: к нему обращаются
+	// и поток интерфейса, и фоновые проверки.
+	selfMu sync.Mutex
+	// selfUpdate — найденное обновление (nil, если обновлений нет).
+	selfUpdate *selfupdate.Update
+	// selfBusy — идёт проверка или установка обновления.
+	selfBusy bool
+
 	// trayRefresh пересобирает меню трея (подписи зависят от языка).
 	trayRefresh func()
+}
+
+// SetSelfUpdate запоминает найденное обновление.
+func (u *UI) SetSelfUpdate(upd *selfupdate.Update) {
+	u.selfMu.Lock()
+	u.selfUpdate = upd
+	u.selfMu.Unlock()
+}
+
+// SelfUpdate возвращает найденное обновление.
+func (u *UI) SelfUpdate() *selfupdate.Update {
+	u.selfMu.Lock()
+	defer u.selfMu.Unlock()
+	return u.selfUpdate
+}
+
+// SetSelfBusy отмечает, что обновление в работе.
+func (u *UI) SetSelfBusy(busy bool) {
+	u.selfMu.Lock()
+	u.selfBusy = busy
+	u.selfMu.Unlock()
+}
+
+// SelfBusy сообщает, идёт ли обновление.
+func (u *UI) SelfBusy() bool {
+	u.selfMu.Lock()
+	defer u.selfMu.Unlock()
+	return u.selfBusy
 }
 
 // SetTrayRefresh задаёт функцию пересборки меню трея.

@@ -54,6 +54,11 @@ func Run(mgr *manager.Manager, st *app.State, opts Options) error {
 	}
 	ui.Rebuild()
 
+	// Тихая проверка обновлений при запуске: если вышла новая версия,
+	// о ней сообщает подсказка внизу окна, а кнопка обновления
+	// становится активной в настройках.
+	go ui.checkSelfUpdate(true)
+
 	if opts.AutoRefresh {
 		go func() {
 			mgr.RefreshAll(context.Background(), opts.ForceRefresh)

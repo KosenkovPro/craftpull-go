@@ -7,9 +7,7 @@
 package ui
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -18,7 +16,6 @@ import (
 
 	"github.com/KosenkovPro/craftpull-go/internal/config"
 	"github.com/KosenkovPro/craftpull-go/internal/i18n"
-	"github.com/KosenkovPro/craftpull-go/internal/selfupdate"
 	"github.com/KosenkovPro/craftpull-go/internal/shortcut"
 )
 
@@ -173,9 +170,35 @@ func (u *UI) buildSettings() fyne.CanvasObject {
 	openLog := widget.NewButton(i18n.T("settings.open_log"), func() {
 		_ = shortcut.OpenLogFile()
 	})
-	update := widget.NewButton(i18n.T("settings.self_now"), func() {
-		u.runSelfUpdate()
+
+	// Обновление самой программы: одна кнопка на всю операцию.
+	// Кнопка установки активна, когда обновление уже найдено.
+	upd := u.SelfUpdate()
+	busy := u.SelfBusy()
+	updateText := i18n.T("settings.update_none")
+	if upd != nil {
+		updateText = i18n.TF("settings.update_to", map[string]string{"{v}": upd.Version})
+	}
+	updateBtn := widget.NewButton(updateText, func() {
+		u.installSelfUpdate()
 	})
+	if upd != nil && !busy {
+		updateBtn.Importance = widget.HighImportance
+	} else {
+		updateBtn.Disable()
+	}
+	checkBtn := widget.NewButton(i18n.T("settings.update_check"), func() {
+		u.checkSelfUpdate(false)
+	})
+	if busy {
+		checkBtn.Disable()
+	}
+	updateSection := container.NewVBox(
+		rowOf(i18n.T("settings.update_current"), labelDim(fmt.Sprintf("%s", Version))),
+		rowOf(i18n.T("settings.update_repo"), labelDim(updateRepo(cfg))),
+		rowOf("", container.NewHBox(checkBtn, updateBtn)),
+		labelDim(i18n.T("settings.update_hint")),
+	)
 
 	body := container.NewVBox(
 		sectionCard(i18n.T("settings.language"),
@@ -197,11 +220,10 @@ func (u *UI) buildSettings() fyne.CanvasObject {
 			container.NewVBox(stable, edge)),
 		sectionCard(i18n.T("settings.behaviour"),
 			container.NewVBox(deleteOld, closeTray, startMin)),
+		sectionCard(i18n.T("settings.update"),
+			updateSection),
 		sectionCard(i18n.T("settings.install"),
-			container.NewVBox(
-				container.NewHBox(shortcutBtn, openData, openLog),
-				update,
-			)),
+			container.NewHBox(shortcutBtn, openData, openLog)),
 	)
 
 	// Заголовок страницы и липкая кнопка сохранения.
@@ -228,23 +250,4 @@ func sectionCard(title string, content fyne.CanvasObject) fyne.CanvasObject {
 func rowOf(label string, value fyne.CanvasObject) fyne.CanvasObject {
 	text := labelDim(label)
 	return container.NewBorder(nil, nil, text, nil, value)
-}
-
-// runSelfUpdate скачивает новую версию программы с GitHub.
-func (u *UI) runSelfUpdate() {
-	cfg := u.mgr.Config()
-	if cfg.SelfUpdateRepo == "" {
-		u.st.SetNotice(i18n.T("err.self_no_repo"))
-		return
-	}
-	go func() {
-		client := &http.Client{Timeout: selfupdate.Timeout}
-		update, err := selfupdate.Prepare(context.Background(), client, cfg.GitHubToken, cfg.SelfUpdateRepo, Version)
-		if err != nil {
-			u.st.SetNotice(err.Error())
-			return
-		}
-		u.st.SetNotice(i18n.TF("notify.selfupdate_started", map[string]string{}))
-		_ = update
-	}()
 }

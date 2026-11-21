@@ -58,7 +58,9 @@ The configuration file is **format-compatible with the Rust edition**: the same
 * **System tray** — the window can be closed into the tray, started minimized, and controlled
   from the tray menu (show, pause, stop, quit).
 * **Two languages** — English and Russian, switchable at any time.
-* **Self-update** — the newest release is downloaded straight from GitHub and applied on exit.
+* **One-button program update** — the new version is found in the GitHub releases, downloaded,
+  verified by SHA-256 and replaces the program file; the program then starts again. A check for
+  a new version also runs at startup.
 * **Free license** — CraftPull is released under the dual `MIT / Apache-2.0` license; hovering the
   line in the sidebar explains what it allows.
 
@@ -192,6 +194,11 @@ repository also carries a short `purpose` («PDF-документы») and a `ca
 in which group of the list it is shown; both travel with the list when it is exported and
 imported.
 
+The program's own update lives in a separate settings section: it shows the installed version,
+a "Check for updates" button and an "Update to v0.4.0" button that replaces the program file
+and starts the program again. The release source is the official repository by default; it can
+be changed with the `self_update_repo` field of the settings file.
+
 ## Continuous integration
 
 `.github/workflows/build.yml` builds the project on every push:
@@ -201,6 +208,7 @@ imported.
 * **macOS universal** — `lipo` of both architectures, plus a `CraftPull.app` bundle, a `zip` and
   a `.dmg`.
 * **macOS universal legacy** — the same universal build made with Go 1.24 for macOS 11.
+* **Linux x64** — cgo enabled, packed into a `tar.gz`.
 * **Checks** — `go vet`, a no-cgo build and a cross-compilation check.
 
 Tagging a commit with `v*` publishes all artifacts as a GitHub release.

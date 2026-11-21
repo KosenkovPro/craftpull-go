@@ -327,6 +327,7 @@ func table() map[string]entry {
 		{"notify.err", "Error: {e}", "Ошибка: {e}"},
 		{"notify.selfupdate_started", "Self-update started — see the log", "Запущено самообновление — смотрите журнал"},
 		{"notify.update_available", "Update available: {v}", "Доступно обновление: {v}"},
+		{"notify.update_downloading", "Downloading update {v}…", "Скачивание обновления {v}…"},
 		{"notify.update_none", "The latest version is already installed", "Установлена последняя версия"},
 		{"notify.update_failed", "Could not update: {e}", "Не удалось обновиться: {e}"},
 		{"notify.saved", "Saved", "Сохранено"},

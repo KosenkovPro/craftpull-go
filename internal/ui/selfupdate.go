@@ -82,6 +82,7 @@ func (u *UI) installSelfUpdate() {
 	cfg := u.mgr.Config()
 	u.SetSelfBusy(true)
 	u.mgr.Log(model.LogInfo, i18n.TF("log.update_download", map[string]string{"{v}": upd.Version}))
+	u.st.SetNotice(i18n.TF("notify.update_downloading", map[string]string{"{v}": upd.Version}))
 
 	go func() {
 		client := &http.Client{Timeout: 15 * time.Minute}

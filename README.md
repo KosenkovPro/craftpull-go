@@ -168,6 +168,7 @@ craftpull --tray                 start minimized in the tray
 craftpull --install-shortcut     install the program and create a shortcut
 craftpull --export-icon <png>    save the application icon as PNG
 craftpull --selftest [slug]      end-to-end check: query GitHub and download a release
+craftpull --update               check for a new version of the program and install it
 craftpull --tab <repos|settings|logs>
 craftpull --view <grid|list|light>
 craftpull --popup <owner/repo>   open the releases panel of a repository
@@ -195,9 +196,10 @@ in which group of the list it is shown; both travel with the list when it is exp
 imported.
 
 The program's own update lives in a separate settings section: it shows the installed version,
-a "Check for updates" button and an "Update to v0.4.1" button that replaces the program file
+a "Check for updates" button and an "Update to v0.4.2" button that replaces the program file
 and starts the program again. The release source is the official repository by default; it can
-be changed with the `self_update_repo` field of the settings file.
+be changed with the `self_update_repo` field of the settings file. The update also runs from
+the command line: `craftpull --update`.
 
 ## Continuous integration
 

@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/KosenkovPro/craftpull-go/internal/icons"
 	"github.com/KosenkovPro/craftpull-go/internal/manager"
 	"github.com/KosenkovPro/craftpull-go/internal/model"
+	"github.com/KosenkovPro/craftpull-go/internal/selfupdate"
 	"github.com/KosenkovPro/craftpull-go/internal/shortcut"
 	"github.com/KosenkovPro/craftpull-go/internal/ui"
 )
@@ -67,6 +69,13 @@ func main() {
 
 	cfg := config.Load()
 	i18n.Set(cfg.Lang)
+
+	// Обновление самой программы из командной строки: удобно для скриптов
+	// и для проверки обновления без окна.
+	if has(args, "--update") {
+		runSelfUpdate(cfg)
+		return
+	}
 
 	mgr, err := manager.New(cfg)
 	if err != nil {
@@ -145,6 +154,49 @@ func runSelfTest(mgr *manager.Manager, slug string) {
 	}
 }
 
+// runSelfUpdate ищет новую версию программы и ставит её.
+//
+// Файл программы заменяется, а новая копия запускается заново — с теми же
+// аргументами, с которыми запущена эта.
+func runSelfUpdate(cfg config.Config) {
+	ctx := context.Background()
+	client := &http.Client{Timeout: selfupdate.Timeout}
+
+	repo := cfg.SelfUpdateRepo
+	if repo == "" {
+		repo = selfupdate.DefaultRepo
+	}
+	upd, err := selfupdate.Check(ctx, client, cfg.GitHubToken, repo, Version)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "CraftPull: %v\n", err)
+		os.Exit(1)
+	}
+	if upd == nil {
+		fmt.Printf("CraftPull %s is up to date\n", Version)
+		return
+	}
+	fmt.Printf("Updating to %s (%s)\n", upd.Version, upd.Asset.Name)
+
+	dir := selfupdate.UpdateDir(config.DataDir(), upd.Version)
+	payload, err := selfupdate.Fetch(ctx, client, cfg.GitHubToken, upd, dir, nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "CraftPull: %v\n", err)
+		os.Exit(1)
+	}
+	current, err := os.Executable()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "CraftPull: %v\n", err)
+		os.Exit(1)
+	}
+	// Новая копия не должна снова лезть за обновлением.
+	os.Args = os.Args[:1]
+	if err := selfupdate.Apply(current, payload); err != nil {
+		fmt.Fprintf(os.Stderr, "CraftPull: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Update installed, the program restarts")
+}
+
 // has проверяет наличие флага.
 func has(args []string, names ...string) bool {
 	for _, a := range args {
@@ -176,6 +228,7 @@ Usage:
   craftpull --install-shortcut   install the program and create a shortcut
   craftpull --export-icon <png>  save the application icon as PNG
   craftpull --selftest [slug]    end-to-end check: query GitHub and download a release
+  craftpull --update            check for a new version of the program and install it
   craftpull --tab <repos|settings|logs>   open a specific tab
   craftpull --view <grid|list|light>      open a specific view mode
   craftpull --popup <owner/repo>          open the releases panel of a repository

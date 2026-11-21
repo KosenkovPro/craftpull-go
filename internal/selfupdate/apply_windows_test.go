@@ -125,3 +125,35 @@ func TestApplyWindowsReplacesAndRestarts(t *testing.T) {
 		t.Error("файл программы не заменён новым")
 	}
 }
+
+// TestHelperScriptRestoresOldProgram проверяет аварийный путь: если новый
+// файл не удалось поставить на место, старая программа остаётся на месте —
+// иначе приложение просто не запустится.
+func TestHelperScriptRestoresOldProgram(t *testing.T) {
+	dir := t.TempDir()
+	current := filepath.Join(dir, "craftpull.exe")
+	if err := os.WriteFile(current, []byte("old program"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Нового файла нет — сценарий не сможет его поставить на место.
+	staged := filepath.Join(dir, "craftpull.exe.new.exe")
+	script := filepath.Join(dir, "update.cmd")
+	// Номер процесса, которого точно нет: ждать не придётся.
+	content := helperScript(current, staged, 0x7FFFFFFF)
+	if err := os.WriteFile(script, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.Command("cmd", "/c", script).CombinedOutput()
+	// Сценарий сообщает об аварии ненулевым кодом — это ожидаемо.
+	if err == nil {
+		t.Error("сценарий должен сообщить об аварии")
+	}
+	_ = out
+	data, err := os.ReadFile(current)
+	if err != nil {
+		t.Fatalf("старая программа пропала: %v", err)
+	}
+	if string(data) != "old program" {
+		t.Errorf("в файле программы %q, а должно остаться \"old program\"", data)
+	}
+}

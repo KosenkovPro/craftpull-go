@@ -48,10 +48,10 @@ func (u *UI) buildRepos() fyne.CanvasObject {
 	)
 
 	body := container.NewVBox()
-	authors, byAuthor := u.groupedRepos()
-	for _, author := range authors {
-		body.Add(u.groupHeader(author, len(byAuthor[author])))
-		repos := byAuthor[author]
+	cats, byCat := u.groupedRepos()
+	for _, cat := range cats {
+		body.Add(u.categoryHeader(cat, len(byCat[cat])))
+		repos := byCat[cat]
 		// Раскрытая карточка стоит на месте своей плитки.
 		hero := u.st.Hero()
 		for i, rc := range repos {
@@ -73,7 +73,7 @@ func (u *UI) buildRepos() fyne.CanvasObject {
 			}
 		}
 	}
-	if len(authors) == 0 {
+	if len(cats) == 0 {
 		body.Add(labelDim(i18n.T("repo.no_releases")))
 	}
 
@@ -81,11 +81,10 @@ func (u *UI) buildRepos() fyne.CanvasObject {
 	return container.NewBorder(top, nil, nil, nil, container.NewScroll(body))
 }
 
-// groupHeader собирает заголовок группы репозиториев одного автора.
-func (u *UI) groupHeader(author string, count int) fyne.CanvasObject {
+// categoryHeader собирает заголовок группы репозиториев одной категории.
+func (u *UI) categoryHeader(cat string, count int) fyne.CanvasObject {
 	return container.NewHBox(
-		labelDim(i18n.T("repo.group")),
-		labelAccent(author, false),
+		labelAccent(config.CategoryTitle(cat), false),
 		labelDim(fmt.Sprintf("%d", count)),
 	)
 }
@@ -340,7 +339,7 @@ func (u *UI) listCard(rc config.RepoConfig) fyne.CanvasObject {
 		badge.Add(pill(i18n.T("popup.edge")+" "+rt.LatestEdge.Tag, colEdge))
 	}
 	if rt.LastCheck != nil {
-		badge.Add(labelDim(i18n.T("repo.checked")+": "+model.HumanDate(*rt.LastCheck)))
+		badge.Add(labelDim(i18n.T("repo.checked") + ": " + model.HumanDate(*rt.LastCheck)))
 	}
 
 	left := container.NewVBox(head, slug, desc, badge)

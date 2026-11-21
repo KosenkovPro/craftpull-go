@@ -43,8 +43,12 @@ The configuration file is **format-compatible with the Rust edition**: the same
 * **Automatic file selection** — the file filter picks the build for the **current operating
   system** on its own, and every asset of a release can also be ticked by hand.
 * **A short purpose for every program** — the tile says in one line what the program is for
-  (`PDF-документы`, `Монтаж видео`, `Скриншоты`). The text lives in the configuration file and
-  travels with the repository list when it is exported and imported.
+  (`PDF-документы`, `Монтаж видео`, `Скриншоты и аннотации`). The text lives in the configuration
+  file and travels with the repository list when it is exported and imported.
+* **A ready-made catalog of 55 programs** — the list is grouped by category: screenshots and
+  recording, video and audio, graphics and 3D, system and network, security and offline bases,
+  self-hosted servers. Programs without binary releases on GitHub (Jellyfin, Nextcloud, Passbolt)
+  are downloaded as source archives.
 * **Self-cleaning storage** — old versions are deleted automatically once the new ones are on
   disk; a pinned release is never deleted, even manually.
 * **Safe downloads** — resumable (HTTP `Range`), `.part` files, SHA-256 verification, a global
@@ -183,7 +187,10 @@ The settings live next to the program's data directory:
 | macOS | `~/Library/Application Support/CraftPull/config.json` |
 
 The file is the **same JSON as in the Rust edition** — repositories, channels, download mode,
-speed limit, parallel downloads, pinned versions, interface language and view mode.
+speed limit, parallel downloads, pinned versions, interface language and view mode. Every
+repository also carries a short `purpose` («PDF-документы») and a `category` key that decides
+in which group of the list it is shown; both travel with the list when it is exported and
+imported.
 
 ## Continuous integration
 

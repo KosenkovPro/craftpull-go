@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"image/color"
-	"sort"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -34,18 +33,18 @@ type UI struct {
 	mgr *manager.Manager
 	st  *app.State
 
-	win      fyne.Window
-	root     *fyne.Container
-	body     *container.Split
-	host     *fyne.Container
-	content  fyne.CanvasObject
-	status   *canvas.Text
+	win       fyne.Window
+	root      *fyne.Container
+	body      *container.Split
+	host      *fyne.Container
+	content   fyne.CanvasObject
+	status    *canvas.Text
 	statusBox *canvas.Rectangle
-	notice   *widget.Label
-	search   *widget.Entry
-	license  *tipLabel
-	navBtns  map[app.Tab]*widget.Button
-	selected map[string]bool
+	notice    *widget.Label
+	search    *widget.Entry
+	license   *tipLabel
+	navBtns   map[app.Tab]*widget.Button
+	selected  map[string]bool
 
 	// trayRefresh пересобирает меню трея (подписи зависят от языка).
 	trayRefresh func()
@@ -292,18 +291,39 @@ func (u *UI) filteredRepos() []config.RepoConfig {
 	return out
 }
 
-// groupedRepos раскладывает репозитории по авторам.
+// groupedRepos раскладывает репозитории по категориям программ.
+//
+// Порядок категорий задан в config.CategoryOrder: сначала свои программы,
+// потом готовый каталог, в конце — всё, что добавил пользователь сам.
 func (u *UI) groupedRepos() ([]string, map[string][]config.RepoConfig) {
-	byAuthor := make(map[string][]config.RepoConfig)
+	byCat := make(map[string][]config.RepoConfig)
 	for _, r := range u.filteredRepos() {
-		byAuthor[r.Author()] = append(byAuthor[r.Author()], r)
+		key := r.Category
+		if key == "" {
+			key = config.CatOther
+		}
+		byCat[key] = append(byCat[key], r)
 	}
-	authors := make([]string, 0, len(byAuthor))
-	for a := range byAuthor {
-		authors = append(authors, a)
+	cats := make([]string, 0, len(byCat))
+	for _, key := range config.CategoryOrder {
+		if _, ok := byCat[key]; ok {
+			cats = append(cats, key)
+		}
 	}
-	sort.Strings(authors)
-	return authors, byAuthor
+	// Категории, которых нет в списке (пользователь придумал свою), — в конец.
+	for key := range byCat {
+		known := false
+		for _, c := range cats {
+			if c == key {
+				known = true
+				break
+			}
+		}
+		if !known {
+			cats = append(cats, key)
+		}
+	}
+	return cats, byCat
 }
 
 // taskForRepo ищет активную задачу загрузки репозитория.

@@ -19,7 +19,13 @@ import (
 const MaxParallel = 16
 
 // DefaultRepos — репозитории, которые добавляются при первом запуске.
+//
+// Список разбит по назначению программ: скриншоты и запись экрана, видео и
+// аудио, графика, системные утилиты, оффлайн-базы и self-hosted серверы.
+// В категориях, где у программы нет бинарных релизов на GitHub, приложение
+// скачивает архив с исходниками.
 var DefaultRepos = []string{
+	// Свои программы.
 	"storytold/pdfcraft",
 	"storytold/wordcraft",
 	"storytold/gridcraft",
@@ -39,13 +45,61 @@ var DefaultRepos = []string{
 	"storytold/craft-anything",
 	"storytold/craft-libs",
 	"storytold/craft-launcher",
+
+	// Скриншоты и запись экрана.
 	"flameshot-org/flameshot",
+	"obsproject/obs-studio",
+	"NickeManarin/ScreenToGif",
+
+	// Видео, аудио и конвертация.
+	"mifi/lossless-cut",
+	"HandBrake/HandBrake",
+	"audacity/audacity",
+	"mpv-player/mpv",
+	"jeffvli/feishin",
+	"SV-stark/FileConverter-rs",
+
+	// Графика и 3D.
+	"d2phap/ImageGlass",
+	"darktable-org/darktable",
+	"FreeCAD/FreeCAD",
+
+	// Система, файлы и сеть.
+	"microsoft/PowerToys",
+	"dundee/gdu",
+	"iterate-ch/cyberduck",
+	"qbittorrent/qBittorrent",
+	"pbatard/rufus",
+	"rustdesk/rustdesk",
+
+	// Безопасность, карты и оффлайн-базы.
+	"keepassxreboot/keepassxc",
+	"organicmaps/organicmaps",
+	"kiwix/kiwix-desktop",
+	"kiwix/kiwix-android",
+
+	// Self-hosted серверы.
+	"passbolt/passbolt_api",
+	"immich-app/immich",
+	"owncloud/ocis",
+	"nextcloud/server",
+	"Freika/dawarich",
+	"jellyfin/jellyfin",
+	"kieraneglin/pinchflat",
+	"navidrome/navidrome",
+	"advplyr/audiobookshelf",
+	"Kareadita/Kavita",
+	"owncast/owncast",
+	"kiwix/kiwix-tools",
+	"VERT-sh/VERT",
+	"VERT-sh/vertd",
 }
 
 // DefaultPurposes — короткое назначение программы.
 //
 // Это пользовательские данные, а не переводы интерфейса: они хранятся
 // в конфиге, правятся вручную и переживают экспорт и импорт списка.
+// Тексты короткие, чтобы целиком помещаться в плитке сетки.
 var DefaultPurposes = map[string]string{
 	"storytold/pdfcraft":       "PDF-документы",
 	"storytold/wordcraft":      "Текстовый редактор",
@@ -66,7 +120,166 @@ var DefaultPurposes = map[string]string{
 	"storytold/craft-anything": "Всё сразу",
 	"storytold/craft-libs":     "Библиотеки",
 	"storytold/craft-launcher": "Запуск программ",
-	"flameshot-org/flameshot":  "Скриншоты",
+
+	// Скриншоты и запись экрана.
+	"flameshot-org/flameshot":  "Скриншоты и аннотации",
+	"obsproject/obs-studio":    "Запись и стриминг",
+	"NickeManarin/ScreenToGif": "Запись в GIF/MP4",
+
+	// Видео, аудио и конвертация.
+	"mifi/lossless-cut":         "Нарезка видео",
+	"HandBrake/HandBrake":       "Сжатие видео",
+	"audacity/audacity":         "Запись и монтаж звука",
+	"mpv-player/mpv":            "Всеядный медиаплеер",
+	"jeffvli/feishin":           "Плеер для сервера",
+	"SV-stark/FileConverter-rs": "Конвертер файлов",
+
+	// Графика и 3D.
+	"d2phap/ImageGlass":       "Просмотрщик фото",
+	"darktable-org/darktable": "Растровый фоторедактор",
+	"FreeCAD/FreeCAD":         "3D-моделирование и CAD",
+
+	// Система, файлы и сеть.
+	"microsoft/PowerToys":     "Утилиты Windows",
+	"dundee/gdu":              "Анализ занятого места",
+	"iterate-ch/cyberduck":    "FTP / SFTP клиент",
+	"qbittorrent/qBittorrent": "Торрент-клиент",
+	"pbatard/rufus":           "Запись флешек USB",
+	"rustdesk/rustdesk":       "Удалённый рабочий стол",
+
+	// Безопасность, карты и оффлайн-базы.
+	"keepassxreboot/keepassxc": "Менеджер паролей",
+	"organicmaps/organicmaps":  "Карты и навигатор",
+	"kiwix/kiwix-desktop":      "Оффлайн Википедия",
+	"kiwix/kiwix-android":      "Википедия (Android)",
+
+	// Self-hosted серверы.
+	"passbolt/passbolt_api":  "Сервер паролей и 2FA",
+	"immich-app/immich":      "Аналог Google Фото",
+	"owncloud/ocis":          "Файловое облако",
+	"nextcloud/server":       "Календари и контакты",
+	"Freika/dawarich":        "История поездок",
+	"jellyfin/jellyfin":      "Домашний кинотеатр",
+	"kieraneglin/pinchflat":  "Архив YouTube-каналов",
+	"navidrome/navidrome":    "Музыкальный сервер",
+	"advplyr/audiobookshelf": "Сервер аудиокниг",
+	"Kareadita/Kavita":       "Сервер книг и PDF",
+	"owncast/owncast":        "Сервер прямых эфиров",
+	"kiwix/kiwix-tools":      "Веб-сервер Википедии",
+	"VERT-sh/VERT":           "Веб-конвертер файлов",
+	"VERT-sh/vertd":          "Демон веб-конвертера",
+}
+
+// DefaultCategories — категория программы для группировки списка.
+//
+// Ключи категорий переводятся интерфейсом (cat.*), поэтому в конфиге лежит
+// только ключ. Своё значение пользователь может поменять вручную.
+var DefaultCategories = map[string]string{
+	"storytold/pdfcraft":       CatOwn,
+	"storytold/wordcraft":      CatOwn,
+	"storytold/gridcraft":      CatOwn,
+	"storytold/deckcraft":      CatOwn,
+	"storytold/photocraft":     CatOwn,
+	"storytold/vectorcraft":    CatOwn,
+	"storytold/figcraft":       CatOwn,
+	"storytold/designcraft":    CatOwn,
+	"storytold/cadcraft":       CatOwn,
+	"storytold/texturecraft":   CatOwn,
+	"storytold/materialcraft":  CatOwn,
+	"storytold/filmcraft":      CatOwn,
+	"storytold/lightcraft":     CatOwn,
+	"storytold/effectcraft":    CatOwn,
+	"storytold/soundcraft":     CatOwn,
+	"storytold/artcraft":       CatOwn,
+	"storytold/craft-anything": CatOwn,
+	"storytold/craft-libs":     CatOwn,
+	"storytold/craft-launcher": CatOwn,
+
+	// Скриншоты и запись экрана.
+	"flameshot-org/flameshot":  CatCapture,
+	"obsproject/obs-studio":    CatCapture,
+	"NickeManarin/ScreenToGif": CatCapture,
+
+	// Видео, аудио и конвертация.
+	"mifi/lossless-cut":         CatMedia,
+	"HandBrake/HandBrake":       CatMedia,
+	"audacity/audacity":         CatMedia,
+	"mpv-player/mpv":            CatMedia,
+	"jeffvli/feishin":           CatMedia,
+	"SV-stark/FileConverter-rs": CatMedia,
+
+	// Графика и 3D.
+	"d2phap/ImageGlass":       CatGraphics,
+	"darktable-org/darktable": CatGraphics,
+	"FreeCAD/FreeCAD":         CatGraphics,
+
+	// Система, файлы и сеть.
+	"microsoft/PowerToys":     CatSystem,
+	"dundee/gdu":              CatSystem,
+	"iterate-ch/cyberduck":    CatSystem,
+	"qbittorrent/qBittorrent": CatSystem,
+	"pbatard/rufus":           CatSystem,
+	"rustdesk/rustdesk":       CatSystem,
+
+	// Безопасность, карты и оффлайн-базы.
+	"keepassxreboot/keepassxc": CatSecurity,
+	"organicmaps/organicmaps":  CatSecurity,
+	"kiwix/kiwix-desktop":      CatSecurity,
+	"kiwix/kiwix-android":      CatSecurity,
+
+	// Self-hosted серверы.
+	"passbolt/passbolt_api":  CatServer,
+	"immich-app/immich":      CatServer,
+	"owncloud/ocis":          CatServer,
+	"nextcloud/server":       CatServer,
+	"Freika/dawarich":        CatServer,
+	"jellyfin/jellyfin":      CatServer,
+	"kieraneglin/pinchflat":  CatServer,
+	"navidrome/navidrome":    CatServer,
+	"advplyr/audiobookshelf": CatServer,
+	"Kareadita/Kavita":       CatServer,
+	"owncast/owncast":        CatServer,
+	"kiwix/kiwix-tools":      CatServer,
+	"VERT-sh/VERT":           CatServer,
+	"VERT-sh/vertd":          CatServer,
+}
+
+// Ключи категорий: их названия переводятся интерфейсом.
+const (
+	CatOwn      = "own"
+	CatCapture  = "capture"
+	CatMedia    = "media"
+	CatGraphics = "graphics"
+	CatSystem   = "system"
+	CatSecurity = "security"
+	CatServer   = "server"
+	CatOther    = "other"
+)
+
+// CategoryOrder — порядок категорий в списке.
+var CategoryOrder = []string{
+	CatOwn, CatCapture, CatMedia, CatGraphics, CatSystem, CatSecurity, CatServer, CatOther,
+}
+
+// CategoryTitle — название категории для заголовка группы.
+func CategoryTitle(key string) string {
+	switch key {
+	case CatOwn:
+		return i18n.T("cat.own")
+	case CatCapture:
+		return i18n.T("cat.capture")
+	case CatMedia:
+		return i18n.T("cat.media")
+	case CatGraphics:
+		return i18n.T("cat.graphics")
+	case CatSystem:
+		return i18n.T("cat.system")
+	case CatSecurity:
+		return i18n.T("cat.security")
+	case CatServer:
+		return i18n.T("cat.server")
+	}
+	return i18n.T("cat.other")
 }
 
 // AssetKind — какой файл релиза скачивать.
@@ -256,18 +469,22 @@ type RepoConfig struct {
 	Description string `json:"description"`
 	// Purpose — короткое назначение программы: «работа с PDF-документами»,
 	// «монтаж видео». Показывается в плитке сетки.
-	Purpose string  `json:"purpose"`
-	Icon    *string `json:"icon"`
+	Purpose string `json:"purpose"`
+	// Category — ключ группы, в которой программа показывается в списке:
+	// «capture», «media», «graphics», «system», «security», «server».
+	Category string  `json:"category"`
+	Icon     *string `json:"icon"`
 }
 
 // NewRepoConfig создаёт настройки репозитория с выключенной загрузкой.
 func NewRepoConfig(slug string) RepoConfig {
 	return RepoConfig{
-		Slug:    slug,
-		Enabled: false,
-		Pinned:  []string{},
-		Filter:  AssetAuto,
-		Purpose: DefaultPurposes[slug],
+		Slug:     slug,
+		Enabled:  false,
+		Pinned:   []string{},
+		Filter:   AssetAuto,
+		Purpose:  DefaultPurposes[slug],
+		Category: DefaultCategories[slug],
 	}
 }
 
@@ -459,6 +676,10 @@ func (c *Config) ensureRepos() {
 		if c.Repos[i].Purpose == "" {
 			c.Repos[i].Purpose = DefaultPurposes[c.Repos[i].Slug]
 		}
+		// Категория — тоже: у старых конфигов её не было вовсе.
+		if c.Repos[i].Category == "" {
+			c.Repos[i].Category = DefaultCategories[c.Repos[i].Slug]
+		}
 	}
 	if c.MaxParallel <= 0 {
 		c.MaxParallel = 1
@@ -490,11 +711,13 @@ type RepoListFile struct {
 
 // RepoEntry — запись списка репозиториев.
 type RepoEntry struct {
-	Slug        string    `json:"slug"`
-	Enabled     bool      `json:"enabled"`
-	Description string    `json:"description"`
+	Slug        string `json:"slug"`
+	Enabled     bool   `json:"enabled"`
+	Description string `json:"description"`
 	// Purpose — короткое назначение программы.
-	Purpose     string    `json:"purpose"`
+	Purpose string `json:"purpose"`
+	// Category — ключ группы, в которой программа показана в списке.
+	Category    string    `json:"category"`
 	Pinned      []string  `json:"pinned"`
 	Filter      AssetKind `json:"filter"`
 	CloneSource bool      `json:"clone_source"`
@@ -527,6 +750,7 @@ func (c Config) ExportList() RepoListFile {
 			Enabled:     r.Enabled,
 			Description: r.Description,
 			Purpose:     r.Purpose,
+			Category:    r.Category,
 			Pinned:      append([]string{}, r.Pinned...),
 			Filter:      r.Filter,
 			CloneSource: r.CloneSource,
@@ -551,6 +775,9 @@ func (c *Config) ImportList(file *RepoListFile) int {
 			if entry.Purpose != "" {
 				existing.Purpose = entry.Purpose
 			}
+			if entry.Category != "" {
+				existing.Category = entry.Category
+			}
 			for _, p := range entry.Pinned {
 				if !existing.IsPinned(p) {
 					existing.Pinned = append(existing.Pinned, p)
@@ -568,6 +795,7 @@ func (c *Config) ImportList(file *RepoListFile) int {
 			CloneSource: entry.CloneSource,
 			Description: entry.Description,
 			Purpose:     entry.Purpose,
+			Category:    entry.Category,
 			Icon:        nil,
 		})
 		added++

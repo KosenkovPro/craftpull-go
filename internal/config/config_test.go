@@ -27,6 +27,70 @@ func TestDefaultRepos(t *testing.T) {
 	}
 }
 
+// TestDefaultCatalog проверяет каталог программ: у каждого репозитория из
+// списка по умолчанию есть назначение и категория, а сам список не содержит
+// повторов.
+func TestDefaultCatalog(t *testing.T) {
+	seen := make(map[string]bool, len(DefaultRepos))
+	for _, slug := range DefaultRepos {
+		if seen[slug] {
+			t.Fatalf("репозиторий %s повторяется в списке по умолчанию", slug)
+		}
+		seen[slug] = true
+
+		if purpose, ok := DefaultPurposes[slug]; !ok || purpose == "" {
+			t.Fatalf("у репозитория %s нет назначения в таблице", slug)
+		}
+		if cat, ok := DefaultCategories[slug]; !ok || cat == "" {
+			t.Fatalf("у репозитория %s нет категории в таблице", slug)
+		}
+	}
+
+	// Программы каталога, которые проверялись на наличие релизов.
+	want := []string{
+		"obsproject/obs-studio",
+		"NickeManarin/ScreenToGif",
+		"mifi/lossless-cut",
+		"HandBrake/HandBrake",
+		"audacity/audacity",
+		"mpv-player/mpv",
+		"jeffvli/feishin",
+		"SV-stark/FileConverter-rs",
+		"d2phap/ImageGlass",
+		"darktable-org/darktable",
+		"FreeCAD/FreeCAD",
+		"microsoft/PowerToys",
+		"dundee/gdu",
+		"iterate-ch/cyberduck",
+		"qbittorrent/qBittorrent",
+		"pbatard/rufus",
+		"rustdesk/rustdesk",
+		"keepassxreboot/keepassxc",
+		"organicmaps/organicmaps",
+		"kiwix/kiwix-desktop",
+		"kiwix/kiwix-android",
+		"passbolt/passbolt_api",
+		"immich-app/immich",
+		"owncloud/ocis",
+		"nextcloud/server",
+		"Freika/dawarich",
+		"jellyfin/jellyfin",
+		"kieraneglin/pinchflat",
+		"navidrome/navidrome",
+		"advplyr/audiobookshelf",
+		"Kareadita/Kavita",
+		"owncast/owncast",
+		"kiwix/kiwix-tools",
+		"VERT-sh/VERT",
+		"VERT-sh/vertd",
+	}
+	for _, slug := range want {
+		if !seen[slug] {
+			t.Fatalf("репозиторий %s не добавлен в список по умолчанию", slug)
+		}
+	}
+}
+
 // TestPurposeRoundTrip проверяет, что назначение программы переживает
 // экспорт и импорт списка репозиториев.
 func TestPurposeRoundTrip(t *testing.T) {
@@ -68,7 +132,38 @@ func TestEnsureReposFillsPurpose(t *testing.T) {
 	if rc.Purpose != DefaultPurposes["storytold/pdfcraft"] {
 		t.Fatalf("назначение не подставлено: %q", rc.Purpose)
 	}
+	if rc.Category != DefaultCategories["storytold/pdfcraft"] {
+		t.Fatalf("категория не подставлена: %q", rc.Category)
+	}
 	if cfg.Repo("flameshot-org/flameshot") == nil {
 		t.Fatal("новый репозиторий по умолчанию не добавился")
+	}
+}
+
+// TestCategoryRoundTrip проверяет, что категория программы переживает
+// экспорт и импорт списка репозиториев.
+func TestCategoryRoundTrip(t *testing.T) {
+	cfg := Config{Repos: []RepoConfig{
+		{Slug: "owner/app", Enabled: true, Purpose: "Работа с фото", Category: CatGraphics},
+	}}
+
+	data, err := json.Marshal(cfg.ExportList())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), `"category"`) {
+		t.Fatalf("в файле списка нет поля category: %s", data)
+	}
+
+	var file RepoListFile
+	if err := json.Unmarshal(data, &file); err != nil {
+		t.Fatal(err)
+	}
+	other := Config{}
+	if other.ImportList(&file) != 1 {
+		t.Fatal("репозиторий не добавился при импорте")
+	}
+	if got := other.Repos[0].Category; got != CatGraphics {
+		t.Fatalf("категория после импорта: %q", got)
 	}
 }

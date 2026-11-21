@@ -36,17 +36,27 @@ const shotsEnv = "CRAFTPULL_SHOTS_DIR"
 // shotRepos — репозитории для снимков: те же, что и в рабочей копии,
 // с описаниями из карточек GitHub.
 func shotRepos() []config.RepoConfig {
-	list := []struct{ slug, desc, purpose string }{
-		{"storytold/pdfcraft", "PdfCraft: An open-source PDF reader and editor written from scratch in pure Rust", "PDF-документы"},
-		{"storytold/wordcraft", "WordCraft: an open-source, clean-room word processor in pure Rust", "Текстовый редактор"},
-		{"storytold/gridcraft", "GridCraft: an open-source, clean-room spreadsheet in pure Rust. By ArtCraft.", "Таблицы"},
-		{"storytold/deckcraft", "DeckCraft: presentations and slide shows; an open-source, clean-room presentation app in pure Rust.", "Презентации"},
-		{"storytold/photocraft", "PhotoCraft: An open-source photo editor written from scratch in pure Rust", "Работа с фото"},
-		{"storytold/vectorcraft", "VectorCraft: An open-source vector art tool written from scratch in pure Rust", "Векторная графика"},
-		{"storytold/figcraft", "FigCraft: interface design and prototyping; an open-source, clean-room reimplementation of collaborative design workflows in pure Rust", "Прототипы"},
-		{"storytold/designcraft", "DesignCraft: An open-source page and layout design editor written from scratch in pure Rust", "Дизайн и вёрстка"},
-		{"storytold/cadcraft", "CADCraft: computer-aided design and drafting — an open-source, clean-room CAD application in pure Rust", "Чертежи и CAD"},
-		{"flameshot-org/flameshot", "Powerful yet simple to use screenshot software", "Скриншоты"},
+	list := []struct{ slug, desc, purpose, cat string }{
+		{"storytold/pdfcraft", "PdfCraft: An open-source PDF reader and editor written from scratch in pure Rust", "PDF-документы", config.CatOwn},
+		{"storytold/wordcraft", "WordCraft: an open-source, clean-room word processor in pure Rust", "Текстовый редактор", config.CatOwn},
+		{"storytold/gridcraft", "GridCraft: an open-source, clean-room spreadsheet in pure Rust. By ArtCraft.", "Таблицы", config.CatOwn},
+		{"storytold/vectorcraft", "VectorCraft: An open-source vector art tool written from scratch in pure Rust", "Векторная графика", config.CatOwn},
+		{"storytold/filmcraft", "FilmCraft: a video editor written from scratch in pure Rust", "Монтаж видео", config.CatOwn},
+		{"flameshot-org/flameshot", "Powerful yet simple to use screenshot software", "Скриншоты и аннотации", config.CatCapture},
+		{"obsproject/obs-studio", "OBS Studio — live streaming and screen recording", "Запись и стриминг", config.CatCapture},
+		{"mifi/lossless-cut", "LosslessCut — cut and join video without re-encoding", "Нарезка видео", config.CatMedia},
+		{"audacity/audacity", "Audacity — record and edit audio", "Запись и монтаж звука", config.CatMedia},
+		{"mpv-player/mpv", "A media player plays most formats, codecs, streams and devices", "Всеядный медиаплеер", config.CatMedia},
+		{"darktable-org/darktable", "darktable is a virtual darkroom for raw photographs", "Растровый фоторедактор", config.CatGraphics},
+		{"FreeCAD/FreeCAD", "FreeCAD is a free and open-source parametric 3D CAD modeler", "3D-моделирование и CAD", config.CatGraphics},
+		{"dundee/gdu", "Fast disk usage analyzer", "Анализ занятого места", config.CatSystem},
+		{"iterate-ch/cyberduck", "Cyberduck is a libre FTP, SFTP, WebDAV and S3 client", "FTP / SFTP клиент", config.CatSystem},
+		{"rustdesk/rustdesk", "An open-source remote desktop alternative to TeamViewer and AnyDesk", "Удалённый рабочий стол", config.CatSystem},
+		{"keepassxreboot/keepassxc", "The official fork of KeePass, a password manager", "Менеджер паролей", config.CatSecurity},
+		{"kiwix/kiwix-android", "Kiwix is an offline reader for Wikipedia and other content", "Википедия (Android)", config.CatSecurity},
+		{"jellyfin/jellyfin", "Free Software Media System that is an alternative to Plex", "Домашний кинотеатр", config.CatServer},
+		{"Kareadita/Kavita", "Kavita is a digital library server", "Сервер книг и PDF", config.CatServer},
+		{"advplyr/audiobookshelf", "Self-hosted audiobook and podcast server", "Сервер аудиокниг", config.CatServer},
 	}
 	out := make([]config.RepoConfig, 0, len(list))
 	for _, r := range list {
@@ -54,6 +64,7 @@ func shotRepos() []config.RepoConfig {
 		rc.Enabled = true
 		rc.Description = r.desc
 		rc.Purpose = r.purpose
+		rc.Category = r.cat
 		out = append(out, rc)
 	}
 	return out

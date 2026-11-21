@@ -2,7 +2,7 @@
 package buildinfo
 
 // Version — версия программы.
-const Version = "0.4.3"
+const Version = "0.4.4"
 
 // Name — название программы.
 const Name = "CraftPull"

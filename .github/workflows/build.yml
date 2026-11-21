@@ -153,10 +153,19 @@ jobs:
             dist/craftpull-darwin-amd64-legacy dist/craftpull-darwin-arm64-legacy
           lipo -info dist/craftpull-darwin-universal-legacy
 
+      - name: Пакет .app и архив
+        run: |
+          chmod +x scripts/make-app-bundle.sh
+          MIN_MACOS=11.0 scripts/make-app-bundle.sh \
+            dist/craftpull-darwin-universal-legacy dist/CraftPull.app
+          ( cd dist && zip -qry craftpull-macos-universal-legacy.zip CraftPull.app )
+
       - uses: actions/upload-artifact@v4
         with:
           name: craftpull-darwin-universal-legacy
-          path: dist/craftpull-darwin-universal-legacy
+          path: |
+            dist/craftpull-darwin-universal-legacy
+            dist/craftpull-macos-universal-legacy.zip
 
   # --- macOS universal: Intel + Apple Silicon одним файлом ---
   macos-universal:
@@ -186,34 +195,41 @@ jobs:
             dist/craftpull-darwin-amd64 dist/craftpull-darwin-arm64
           lipo -info dist/craftpull-darwin-universal
 
-      - name: Пакет .app
+      - name: Пакеты .app
         run: |
           chmod +x scripts/make-app-bundle.sh
+          # Отдельный пакет под каждую архитектуру: кому не нужен universal.
+          mkdir -p dist/amd64 dist/arm64
+          scripts/make-app-bundle.sh dist/craftpull-darwin-amd64 dist/amd64/CraftPull.app
+          scripts/make-app-bundle.sh dist/craftpull-darwin-arm64 dist/arm64/CraftPull.app
           scripts/make-app-bundle.sh dist/craftpull-darwin-universal dist/CraftPull.app
 
-      - name: Архив и образ диска
+      - name: Архивы пакетов
         run: |
-          zip -qry dist/craftpull-macos-universal.zip dist/CraftPull.app
-          # hdiutil на раннерах иногда отвечает «Resource busy» — повторяем.
-          for attempt in 1 2 3 4; do
-            if hdiutil create -volname CraftPull -srcfolder dist/CraftPull.app \
-                -ov -format UDZO dist/craftpull-macos-universal.dmg; then
-              echo "Образ диска готов"
-              break
-            fi
-            echo "hdiutil не справился, попытка $attempt"
-            rm -f dist/craftpull-macos-universal.dmg
-            sleep 15
-          done
-          test -f dist/craftpull-macos-universal.dmg
+          ( cd dist/amd64 && zip -qry ../craftpull-macos-amd64.zip CraftPull.app )
+          ( cd dist/arm64 && zip -qry ../craftpull-macos-arm64.zip CraftPull.app )
+          ( cd dist && zip -qry craftpull-macos-universal.zip CraftPull.app )
+
+      - name: Образ диска
+        run: |
+          chmod +x scripts/make-dmg.sh
+          scripts/make-dmg.sh dist/CraftPull.app dist/craftpull-macos-universal.dmg
+
+      - name: Установщик .pkg
+        run: |
+          chmod +x scripts/make-pkg.sh
+          scripts/make-pkg.sh dist/CraftPull.app dist/craftpull-macos-universal.pkg
 
       - uses: actions/upload-artifact@v4
         with:
           name: craftpull-macos-universal
           path: |
             dist/craftpull-darwin-universal
+            dist/craftpull-macos-amd64.zip
+            dist/craftpull-macos-arm64.zip
             dist/craftpull-macos-universal.zip
             dist/craftpull-macos-universal.dmg
+            dist/craftpull-macos-universal.pkg
 
   # --- Linux: cgo обязателен (Fyne), нужны заголовки OpenGL и X11 ---
   # Сбой этой сборки не должен задерживать релиз: файл просто не попадёт
@@ -323,8 +339,12 @@ jobs:
             dist/craftpull-darwin-amd64
             dist/craftpull-darwin-arm64
             dist/craftpull-darwin-universal
+            dist/craftpull-macos-amd64.zip
+            dist/craftpull-macos-arm64.zip
             dist/craftpull-macos-universal.zip
             dist/craftpull-macos-universal.dmg
+            dist/craftpull-macos-universal.pkg
+            dist/craftpull-macos-universal-legacy.zip
             dist/craftpull-darwin-universal-legacy
             dist/craftpull-linux-amd64.tar.gz
           generate_release_notes: true

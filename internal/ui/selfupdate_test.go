@@ -34,7 +34,8 @@ func collectButtons(obj fyne.CanvasObject) []*widget.Button {
 				walk(child)
 			}
 		case *container.Scroll:
-			walk(v.Content)		}
+			walk(v.Content)
+		}
 	}
 	walk(obj)
 	return out

@@ -134,6 +134,28 @@ lipo -create -output dist/craftpull-darwin-universal \
 scripts/make-app-bundle.sh dist/craftpull-darwin-universal dist/CraftPull.app
 ```
 
+### macOS file formats
+
+| File | What it is | How to use it |
+| --- | --- | --- |
+| `craftpull-macos-universal.zip` | the `CraftPull.app` bundle (Intel + Apple Silicon) | unpack it and drag the app into «Applications» |
+| `craftpull-macos-amd64.zip` | the `CraftPull.app` bundle for Intel only | the same |
+| `craftpull-macos-arm64.zip` | the `CraftPull.app` bundle for Apple Silicon only | the same |
+| `craftpull-macos-universal.dmg` | disk image: the app and a shortcut to Applications | open the image and drag the icon into «Applications» |
+| `craftpull-macos-universal.pkg` | step-by-step installer | double-click it; the app goes into `/Applications` |
+| `craftpull-darwin-universal` | the plain binary | for those who want the file without a bundle |
+
+`scripts/build-macos.sh` builds all of them; the individual steps:
+
+```bash
+scripts/make-app-bundle.sh dist/craftpull-darwin-universal dist/CraftPull.app
+scripts/make-dmg.sh dist/CraftPull.app dist/craftpull-macos-universal.dmg
+scripts/make-pkg.sh dist/CraftPull.app dist/craftpull-macos-universal.pkg
+```
+
+The builds are not signed, so macOS shows a "cannot be verified" warning. Open the app
+with right-click → Open once — macOS remembers the choice afterwards.
+
 ### macOS coverage
 
 | macOS | Version | Build |
@@ -196,7 +218,7 @@ in which group of the list it is shown; both travel with the list when it is exp
 imported.
 
 The program's own update lives in a separate settings section: it shows the installed version,
-a "Check for updates" button and an "Update to v0.4.3" button that replaces the program file
+a "Check for updates" button and an "Update to v0.4.4" button that replaces the program file
 and starts the program again. The release source is the official repository by default; it can
 be changed with the `self_update_repo` field of the settings file. The update also runs from
 the command line: `craftpull --update`. If the GitHub API rate limit gets in the way, the
@@ -208,8 +230,9 @@ program reads the public release page instead — it carries the file checksum a
 
 * **Windows x64** — mingw-w64, cgo enabled, packed into a `zip`.
 * **macOS Intel** (`macos-15-intel`) and **macOS Apple Silicon** (`macos-15`) — separate builds.
-* **macOS universal** — `lipo` of both architectures, plus a `CraftPull.app` bundle, a `zip` and
-  a `.dmg`.
+* **macOS universal** — `lipo` of both architectures, plus the `CraftPull.app` bundle in three
+  flavours (universal, Intel, Apple Silicon), the `zip` archives, a `.dmg` disk image and a
+  `.pkg` installer.
 * **macOS universal legacy** — the same universal build made with Go 1.24 for macOS 11.
 * **Linux x64** — cgo enabled, packed into a `tar.gz`.
 * **Checks** — `go vet`, a no-cgo build and a cross-compilation check.

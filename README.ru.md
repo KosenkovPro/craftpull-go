@@ -132,6 +132,28 @@ lipo -create -output dist/craftpull-darwin-universal \
 scripts/make-app-bundle.sh dist/craftpull-darwin-universal dist/CraftPull.app
 ```
 
+### Форматы для macOS
+
+| Файл | Что это | Как пользоваться |
+| --- | --- | --- |
+| `craftpull-macos-universal.zip` | пакет `CraftPull.app` (Intel + Apple Silicon) | распаковать и перетащить приложение в «Программы» |
+| `craftpull-macos-amd64.zip` | пакет `CraftPull.app` только для Intel | то же самое |
+| `craftpull-macos-arm64.zip` | пакет `CraftPull.app` только для Apple Silicon | то же самое |
+| `craftpull-macos-universal.dmg` | образ диска: приложение и ярлык на папку Applications | открыть образ и перетащить значок в «Программы» |
+| `craftpull-macos-universal.pkg` | пошаговый установщик | двойной клик, программа ставится в `/Applications` |
+| `craftpull-darwin-universal` | готовый бинарник | для тех, кому нужен файл без пакета |
+
+Сборка этих файлов описана в `scripts/build-macos.sh`, по отдельности:
+
+```bash
+scripts/make-app-bundle.sh dist/craftpull-darwin-universal dist/CraftPull.app
+scripts/make-dmg.sh dist/CraftPull.app dist/craftpull-macos-universal.dmg
+scripts/make-pkg.sh dist/CraftPull.app dist/craftpull-macos-universal.pkg
+```
+
+Сборки не подписаны: macOS покажет предупреждение «не проверено». Открыть программу можно
+через правую кнопку → «Открыть», после чего macOS запомнит выбор.
+
 ### Покрытие macOS
 
 | macOS | Версия | Сборка |
@@ -193,7 +215,7 @@ craftpull --version
 импорте.
 
 Обновление самой программы — отдельный раздел настроек: там показана установленная версия,
-есть кнопка «Проверить обновления» и кнопка «Обновить до v0.4.3», которая подменяет файл
+есть кнопка «Проверить обновления» и кнопка «Обновить до v0.4.4», которая подменяет файл
 программы и запускает её заново. Источник релизов по умолчанию — официальный репозиторий;
 его можно поменять в поле `self_update_repo` файла настроек. Обновление запускается и из
 командной строки: `craftpull --update`. Если GitHub не пускает по лимиту API, программа
@@ -205,7 +227,8 @@ craftpull --version
 
 * **Windows x64** — mingw-w64, cgo включён, упаковка в `zip`.
 * **macOS Intel** (`macos-15-intel`) и **macOS Apple Silicon** (`macos-15`) — отдельные сборки.
-* **macOS universal** — `lipo` обеих архитектур, плюс пакет `CraftPull.app`, `zip` и `.dmg`.
+* **macOS universal** — `lipo` обеих архитектур, плюс пакет `CraftPull.app` в трёх видах
+  (universal, Intel, Apple Silicon), архивы `zip`, образ диска `.dmg` и установщик `.pkg`.
 * **macOS universal legacy** — тот же universal-бинарник, собранный на Go 1.24 для macOS 11.
 * **Linux x64** — cgo включён, упаковка в `tar.gz`.
 * **Проверки** — `go vet`, сборка без cgo и кросс-компиляция.

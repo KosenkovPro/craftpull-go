@@ -21,6 +21,19 @@
 
 ---
 
+> ### ⚠️ This edition is frozen
+>
+> The **Rust edition** is the main one now: it is smaller, starts instantly and keeps the
+> whole macOS format set — `.app`, `.dmg` and a step-by-step `.pkg` installer — together
+> with releases outside GitHub (VLC, GIMP and Blender).
+>
+> * Main repository: **[KosenkovPro/craftpuller](https://github.com/KosenkovPro/craftpuller)**
+> * This repository keeps the last working build (**v0.4.4**) and will not be updated.
+> * The configuration file stays compatible: the same `config.json` moves between the two
+>   editions without conversion.
+
+---
+
 ## What it is
 
 This repository is the **Go rewrite of CraftPull** — the same application that exists in the
